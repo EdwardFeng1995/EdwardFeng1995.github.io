@@ -6,20 +6,23 @@
     
 
     
-    <title>归档: 2019 | Fpp</title>
+    <title>重载与重写 | Fpp</title>
     
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     
-    <meta name="description" content="个人学习心得，随笔">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Fpp">
-<meta property="og:url" content="http://yoursite.com/archives/2019/index.html">
+        <meta name="keywords" content>
+    
+    <meta name="description" content="之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。         1、函数重载：         （1）必须在同一类中进行；         （2）子类无法继承父类的函数，父类同名函数将被名称覆盖；         （3）重载是在编译期间根据参数类型和个数决定函数调用。         2、函数重写         （1）必须发生与父类与子类之间；         （2）父类与子类中">
+<meta property="og:type" content="article">
+<meta property="og:title" content="重载与重写">
+<meta property="og:url" content="http://yoursite.com/2019/03/17/重载与重写/index.html">
 <meta property="og:site_name" content="Fpp">
-<meta property="og:description" content="个人学习心得，随笔">
+<meta property="og:description" content="之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。         1、函数重载：         （1）必须在同一类中进行；         （2）子类无法继承父类的函数，父类同名函数将被名称覆盖；         （3）重载是在编译期间根据参数类型和个数决定函数调用。         2、函数重写         （1）必须发生与父类与子类之间；         （2）父类与子类中">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-03-17T02:02:10.403Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Fpp">
-<meta name="twitter:description" content="个人学习心得，随笔">
+<meta name="twitter:title" content="重载与重写">
+<meta name="twitter:description" content="之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。         1、函数重载：         （1）必须在同一类中进行；         （2）子类无法继承父类的函数，父类同名函数将被名称覆盖；         （3）重载是在编译期间根据参数类型和个数决定函数调用。         2、函数重写         （1）必须发生与父类与子类之间；         （2）父类与子类中">
     
 
     
@@ -140,127 +143,223 @@
                         <div class="main-body-header">
     <h1 class="header">
     
-    <i class="icon fa fa-archive"></i>归档: 2019
+    <a class="page-title-link" href="/categories/C-心得/">C++心得</a>
     </h1>
 </div>
 
                         <div class="main-body-content">
-                            
-
-    
-    
+                            <article id="post-重载与重写" class="article article-single article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
         
-        
-        <section class="archives-wrap">
-            <div class="archive-year-wrap">
-                <a href="/archives/2019" class="archive-year"><i class="icon fa fa-calendar-o"></i>2019</a>
-            </div>
-            <div class="archives">
-    
-    
-    
-        <div class="article-row">
-    
-        <article class="article article-summary">
-    <div class="article-summary-inner">
-        
-        <a href="/2019/03/17/重载与重写/" class="thumbnail">
-    
-    
-        <span class="thumbnail-image thumbnail-none"></span>
-    
-    
-        
-<span class="comment-counter">
-    <i class="fa fa-comments-o"></i>
-    
-        <span class="disqus-comment-count" data-disqus-identifier data-disqus-url="http://yoursite.com/2019/03/17/重载与重写/">0</span>
-    
-</span>
-
-
-    
-</a>
-
-        
-        <div class="article-meta">
-            <div class="category">
-            <a class="article-category-link" href="/categories/C-心得/">C++心得</a>
-            </div>
-            <div class="date"><time datetime="2019-03-17T01:32:00.000Z" itemprop="datePublished">2019-03-17</time></div>
-        </div>
-        
+            <header class="article-header">
+                
     
         <h1 class="article-title" itemprop="name">
-        <a href="/2019/03/17/重载与重写/">重载与重写</a>
+        重载与重写
         </h1>
     
 
-        <p class="article-excerpt">
-            之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。
+            </header>
+        
+        
+            <div class="article-meta">
+                
+    <div class="article-date">
+        <a href="/2019/03/17/重载与重写/" class="article-date">
+            <time datetime="2019-03-17T01:32:00.000Z" itemprop="datePublished">2019-03-17</time>
+        </a>
+    </div>
+
+		
+
+                
+            </div>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+            <pre><code>之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。
         1、函数重载：
         （1）必须在同一类中进行；
         （2）子类无法继承父类的函数，父类同名函数将被名称覆盖；
         （3）重载是在编译期间根据参数类型和个数决定函数调用。
         2、函数重写
         （1）必须发生与父类与子类之间；
-        （2）父类与子类中
-        </p>
-    </div>
-</article>
-    
+        （2）父类与子类中的函数必须有完全相同的原型；
+        （3）使用virtual声明后能够产生多态（如果不使用virtual，那叫重定义），多态是在运行期间根据具体对象的类型决定函数的调用。
+        下面是示例代码：
 
-    
-    
-    
-    
-        <article class="article article-summary">
-    <div class="article-summary-inner">
-        
-        <a href="/2019/03/16/hello-world/" class="thumbnail">
-    
-    
-        <span class="thumbnail-image thumbnail-none"></span>
-    
-    
-        
-<span class="comment-counter">
-    <i class="fa fa-comments-o"></i>
-    
-        <span class="disqus-comment-count" data-disqus-identifier data-disqus-url="http://yoursite.com/2019/03/16/hello-world/">0</span>
-    
-</span>
+        #include &lt;iostream&gt;
 
+        using namespace std;
 
-    
-</a>
+        class Parent
+        {
+        public:
+            //同一类中为函数重载，这几个函数为重载
+            virtual void fun(){
+            cout&lt;&lt;&quot;fun of Parent&quot;&lt;&lt;endl;
+            }
+            virtual void fun(int i){
+                cout&lt;&lt;&quot;fun2 &quot;&lt;&lt;i&lt;&lt;endl;
+            }
+            virtual void abc(){
+                cout&lt;&lt;&quot;abc&quot;&lt;&lt;endl;
+            }
+        protected:
+        private:
+        };
 
-        
-        <div class="article-meta">
-            <div class="category">
+        class Child:public Parent
+        {
+        public:
+            void abc(){
+                cout&lt;&lt;&quot;abc&quot;&lt;&lt;endl;
+            }
+            void abc(int i){
+                cout&lt;&lt;i&lt;&lt;endl;
+        }
+        //如果没有下面的代码，那么可以通过子类对象调用父类函数，c1.fun();
+        //如果有下面代码，子类无法重载父类函数，父类同名函数将被覆盖，所以c1.fun()无法调用
+        //如果和父类原型相同，那么可以是重写。
+
+            void fun(int i,int j){
+                cout&lt;&lt;&quot;fun1 of Child &quot;&lt;&lt;i&lt;&lt;&quot; &quot;&lt;&lt;j&lt;&lt;endl;
+            }
+            void fun(int i,int j,int n){
+                cout&lt;&lt;&quot;fun2 of Child&quot;&lt;&lt;endl;
+            }
+
+        };
+
+        int main()
+        {
+            Child c1;
+            c1.Parent::fun();
+
+            /*
+              1、c++编译器 看到fun名字，在子类中已经存在了（名称覆盖），所以C++编译器不会去找父类的4                个参数的func函数
+              2、c++编译器只会在子类中查找fun函数，找到了两个fun，一个是2个参数的，一个是3个参数的
+              3、c++编译器开始报错。。。
+              4、若想调用，只能加作用域运算符
+            */
+
+            c1.fun(1);//报错，没有匹配的函数，无法调用父类的fun(int i);
+
+            //c1.fun();
+            //fun函数的名字，在子类中发生了名称覆盖，子类的函数的名字，占用了父类的函数的名字的位置
+            //因为子类中已经有了fun函数重载形式。。。。
+            //编译器开始在子类中找fun函数。。。但是没有0个参数的fun函数
+            std::cout &lt;&lt; &quot;Hello world&quot; &lt;&lt; std::endl;
+            return 0;
+        }
+</code></pre>
+        </div>
+        <footer class="article-footer">
             
-            </div>
-            <div class="date"><time datetime="2019-03-16T08:01:12.183Z" itemprop="datePublished">2019-03-16</time></div>
-        </div>
-        
-    
-        <h1 class="article-title" itemprop="name">
-        <a href="/2019/03/16/hello-world/">Hello World</a>
-        </h1>
-    
 
-        <p class="article-excerpt">
-            Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick
-        </p>
+
+
+    <a data-url="http://yoursite.com/2019/03/17/重载与重写/" data-id="cjtcaayz300021hfkizhaq6kp" class="article-share-link"><i class="fa fa-share"></i>分享到</a>
+<script>
+    (function ($) {
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+        </footer>
     </div>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "author": {
+            "@type": "Person",
+            "name": "冯泡泡"
+        },
+        "headline": "重载与重写",
+        "image": "http://yoursite.com",
+        "keywords": "",
+        "genre": "C++心得",
+        "datePublished": "2019-03-17",
+        "dateCreated": "2019-03-17",
+        "dateModified": "2019-03-17",
+        "url": "http://yoursite.com/2019/03/17/重载与重写/",
+        "description": "之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。
+        1、函数重载：
+        （1）必须在同一类中进行；
+        （2）子类无法继承父类的函数，父类同名函数将被名称覆盖；
+        （3）重载是在编译期间根据参数类型和个数决定函数调用。
+        2、函数重写
+        （1）必须发生与父类与子类之间；
+        （2）父类与子类中"
+        "wordCount": 747
+    }
+</script>
+
 </article>
-    
-        </div>
-    
 
+    <section id="comments">
+    
+        
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
 
-    </div></section>
+    
+    </section>
 
 
 
@@ -322,6 +421,19 @@ Quick
             
         </ul>
     </div>
+    
+        
+<nav id="article-nav">
+    
+    
+        <a href="/2019/03/16/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
+        <strong class="article-nav-caption">上一篇</strong>
+        <p class="article-nav-title">Hello World</p>
+        <i class="icon fa fa-chevron-left" id="icon-chevron-left"></i>
+        </a>
+    
+</nav>
+
     
     <div class="widgets-container">
         
@@ -456,11 +568,13 @@ Quick
     var disqus_shortname = 'hexo-theme-hueman';
     
     
+    var disqus_url = 'http://yoursite.com/2019/03/17/重载与重写/';
+    
     (function() {
     var dsq = document.createElement('script');
     dsq.type = 'text/javascript';
     dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
     (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
     })();
     </script>
