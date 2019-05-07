@@ -21,7 +21,7 @@
 <meta property="og:description" content="epoll反应堆模型epoll是Linux下多路复用IO接口select/poll的增强版本，它能显著提高程序在大量并发连接中只有少量活跃的情况下的系统CPU利用率，因为它会复用文件描述符集合来传递结果而不用迫使开发者每次等待事件之前都必须重新准备要被侦听的文件描述符集合，另一点原因就是获取事件的时候，它无须遍历整个被侦听的描述符集，只要遍历那些被内核IO事件异步唤醒而加入Ready队列的描述符集">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/pasted-2.png">
-<meta property="og:updated_time" content="2019-05-07T12:53:50.325Z">
+<meta property="og:updated_time" content="2019-05-07T13:18:49.496Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="epoll反应堆模型">
 <meta name="twitter:description" content="epoll反应堆模型epoll是Linux下多路复用IO接口select/poll的增强版本，它能显著提高程序在大量并发连接中只有少量活跃的情况下的系统CPU利用率，因为它会复用文件描述符集合来传递结果而不用迫使开发者每次等待事件之前都必须重新准备要被侦听的文件描述符集合，另一点原因就是获取事件的时候，它无须遍历整个被侦听的描述符集，只要遍历那些被内核IO事件异步唤醒而加入Ready队列的描述符集">
@@ -192,45 +192,33 @@
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/epoll.h&gt;</span></span></span><br><span class="line">	<span class="function"><span class="keyword">int</span> <span class="title">epoll_ctl</span><span class="params">(<span class="keyword">int</span> epfd, <span class="keyword">int</span> op, <span class="keyword">int</span> fd, struct epoll_event *event)</span></span></span><br><span class="line">		epfd：	为epoll_creat的句柄</span><br><span class="line">		op：		表示动作，用<span class="number">3</span>个宏来表示：</span><br><span class="line">			EPOLL_CTL_ADD (注册新的fd到epfd，给红黑树加入新节点)，</span><br><span class="line">			EPOLL_CTL_MOD (修改已经注册的fd的监听事件)，</span><br><span class="line">			EPOLL_CTL_DEL (从epfd删除一个fd，删除红黑树节点)；</span><br><span class="line">		event：	告诉内核需要监听的事件</span><br><span class="line"></span><br><span class="line">		<span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> &#123;</span></span><br><span class="line">			<span class="keyword">__uint32_t</span> events; <span class="comment">/* Epoll events */</span></span><br><span class="line">			<span class="keyword">epoll_data_t</span> data; <span class="comment">/* User data variable */</span></span><br><span class="line">		&#125;;</span><br><span class="line">		<span class="keyword">typedef</span> <span class="keyword">union</span> epoll_data &#123;</span><br><span class="line">			<span class="keyword">void</span> *ptr;</span><br><span class="line">			<span class="keyword">int</span> fd;</span><br><span class="line">			<span class="keyword">uint32_t</span> u32;</span><br><span class="line">			<span class="keyword">uint64_t</span> u64;</span><br><span class="line">		&#125; <span class="keyword">epoll_data_t</span>;</span><br><span class="line"></span><br><span class="line">		EPOLLIN ：	表示对应的文件描述符可以读（包括对端SOCKET正常关闭）</span><br><span class="line">		EPOLLOUT：	表示对应的文件描述符可以写</span><br><span class="line">		EPOLLPRI：	表示对应的文件描述符有紧急的数据可读（这里应该表示有带外数据到来）</span><br><span class="line">		EPOLLERR：	表示对应的文件描述符发生错误</span><br><span class="line">		EPOLLHUP：	表示对应的文件描述符被挂断；</span><br><span class="line">		EPOLLET： 	将EPOLL设为边缘触发(Edge Triggered)模式，这是相对于水平触发(Level Triggered)而言的</span><br><span class="line">		EPOLLONESHOT：只监听一次事件，当监听完这次事件之后，如果还需要继续监听这个socket的话，需要再次把这个socket加入到EPOLL队列里</span><br></pre></td></tr></table></figure>
 <p>（3）等待所监控文件描述符上有事件的产生，类似于select()调用。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/epoll.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_wait</span><span class="params">(<span class="keyword">int</span> epfd, struct epoll_event *events, <span class="keyword">int</span> maxevents, <span class="keyword">int</span> timeout)</span></span></span><br><span class="line">	events：		用来存内核得到事件的集合，</span><br><span class="line">	maxevents：	告之内核这个events有多大，这个maxevents的值不能大于创建epoll_create()时的size，</span><br><span class="line">	  timeout：	是超时时间</span><br><span class="line">		   <span class="number">-1</span>：	阻塞</span><br><span class="line">			<span class="number">0</span>：	立即返回，非阻塞</span><br><span class="line">		   &gt;<span class="number">0</span>：	指定毫秒</span><br><span class="line">		返回值：	成功返回有多少文件描述符就绪，时间到时返回<span class="number">0</span>，出错返回<span class="number">-1</span></span><br></pre></td></tr></table></figure></p>
 <p>epoll的设计： </p>
-<blockquote>
 <ul>
 <li>（1）epoll在Linux内核中构建了一个文件系统，该文件系统采用红黑树来构建，红黑树在增加和删除上面的效率极高，因此是epoll高效的原因之一。有兴趣可以百度红黑树了解，但在这里你只需知道其算法效率超高即可。 </li>
 <li>（2）epoll红黑树上采用事件异步唤醒，内核监听I/O，事件发生后内核搜索红黑树并将对应节点数据放入异步唤醒的事件队列中。 </li>
-<li>（3）epoll的数据从用户空间到内核空间采用mmap存储I/O映射来加速。该方法是目前Linux进程间通信中传递最快,消耗最小,传递数据过程不涉及系统调用的方法。 </li>
-</ul>
-</blockquote>
-<p> epoll接口相对于传统的select/poll而言，有以下优点： </p>
-<blockquote>
-<ul>
+<li><p>（3）epoll的数据从用户空间到内核空间采用mmap存储I/O映射来加速。该方法是目前Linux进程间通信中传递最快,消耗最小,传递数据过程不涉及系统调用的方法。 </p>
+<p>epoll接口相对于传统的select/poll而言，有以下优点： </p>
+</li>
 <li>（1）支持单个进程打开大数量的文件描述符。受进程最大打开的文件描述符数量限制，而不是受自身实现限制。而select单个进程能够打开的文件描述符的数量存在最大限制，这个限制是select自身实现的限制。通常是1024。poll采用链表，也是远超select的。 </li>
 <li>（2）Linux的I/O效率不会随着文件描述符数量的增加而线性下降。较之于select/poll，当处于一个高并发时(例如10万，100万)。在如此庞大的socket集合中，任一时间里其实只有部分的socket是“活跃”的。select/poll的处理方式是，对用如此庞大的集合进行线性扫描并对有事件发生的socket进行处理，这将极大的浪费CPU资源。因此epoll的改进是，由于I/O事件发生，内核将活跃的socket放入队列并交给mmap加速到用户空间，程序拿到的集合是处于活跃的socket集合，而不是所有socket集合。 </li>
-<li>（3）使用mmap加速内核与用户空间的消息传递。select/poll采用的方式是，将所有要监听的文件描述符集合拷贝到内核空间（用户态到内核态切换）。接着内核对集合进行轮询检测，当有事件发生时，内核从中集合并将集合复制到用户空间。 再看看epoll怎么做的，内核与程序共用一块内存，用户与mmap加速区进行数据交互不涉及权限的切换(用户态到内核态，内核态到用户态)。内核对于处于非内核空间的内存有权限进行读取。 </li>
+<li><p>（3）使用mmap加速内核与用户空间的消息传递。select/poll采用的方式是，将所有要监听的文件描述符集合拷贝到内核空间（用户态到内核态切换）。接着内核对集合进行轮询检测，当有事件发生时，内核从中集合并将集合复制到用户空间。 再看看epoll怎么做的，内核与程序共用一块内存，用户与mmap加速区进行数据交互不涉及权限的切换(用户态到内核态，内核态到用户态)。内核对于处于非内核空间的内存有权限进行读取。 </p>
+<p>  作者：青城山小和尚<br>  来源：CSDN<br>  原文：<a href="https://blog.csdn.net/qq_36359022/article/details/81355897" target="_blank" rel="noopener">https://blog.csdn.net/qq_36359022/article/details/81355897</a></p>
+</li>
 </ul>
-</blockquote>
-<pre><code>作者：青城山小和尚 
-来源：CSDN 
-原文：https://blog.csdn.net/qq_36359022/article/details/81355897
-</code></pre><h2 id="2、边沿触发（ET）和水平触发（LT）"><a href="#2、边沿触发（ET）和水平触发（LT）" class="headerlink" title="2、边沿触发（ET）和水平触发（LT）"></a>2、边沿触发（ET）和水平触发（LT）</h2><blockquote>
-<ul>
+<h2 id="2、边沿触发（ET）和水平触发（LT）"><a href="#2、边沿触发（ET）和水平触发（LT）" class="headerlink" title="2、边沿触发（ET）和水平触发（LT）"></a>2、边沿触发（ET）和水平触发（LT）</h2><ul>
 <li>（1）水平触发, 此方式为默认情况。<br>当设置了水平触发以后，以可读事件为例，当有数据到来并且数据在缓冲区待读。即使我这一次没有读取完数据，只要缓冲区里还有数据就会触发第二次，直到缓冲区里没数据。</li>
 <li>（2）epoll边沿触发，当设置了边沿触发以后，以可读事件为例，对“有数据到来”这件事为触发。</li>
 </ul>
-</blockquote>
 <p><img src="/images/pasted-2.png" alt="upload successful"><br>为什么说边沿触发(ET) 的效率更高呢？ </p>
-<blockquote>
 <ul>
 <li>(1) 边沿触发只在数据到来的一刻才触发，很多时候服务器在接受大量数据时会先接受数据头部(水平触发在此触发第一次，边沿触发第一次)。 </li>
 <li>(2) 接着服务器通过解析头部决定要不要接这个数据。此时，如果不接受数据，水平触发需要手动清除，而边沿触发可以将清除工作交给一个定时的清除程序去做，自己立刻返回。 </li>
 <li>(3) 如果接受，两种方式都可以用while接收完整数据。</li>
 </ul>
-</blockquote>
 <h2 id="3、epoll非阻塞I-O"><a href="#3、epoll非阻塞I-O" class="headerlink" title="3、epoll非阻塞I/O"></a>3、epoll非阻塞I/O</h2><p>使用的读取数据函数为read函数，在默认情况下此类函数是阻塞式的，在没有数据时会一直阻塞等待数据到来。 </p>
-<blockquote>
 <ul>
 <li>（1）数据到来100B，在epoll模式下调用read时，即使read()是阻塞式的也不会在这里等待，因为既然运行到read()，说明数据缓冲区已经有数据，因此这处无影响。 </li>
 <li>（2）在服务器开发中，一般不会直接用采用类似read()函数这一类系统调用(只有内核缓冲区)，会使用封装好的一些库函数(有内核缓冲区+用户缓冲区)或者自己封装的函数。 </li>
 </ul>
-</blockquote>
 <p>例如：使用readn()函数，设置读取200B返回，假设数据到来100B,可读事件触发，而程序要使用readn()读200B，那么此时如果是阻塞式的，将在此处形成死锁 </p>
 <p>流程是：100B ⇒ 触发可读事件 ⇒ readn()调用 ⇒ readn()都不够200B,阻塞 ⇒ cfd又到来200B ⇒ 此时程序在readn()处暂停，没有机会调用epoll_wait() ⇒ 完成死锁</p>
 <p>解决：<br>将该cfd在上树前设置为非阻塞式</p>
@@ -242,7 +230,7 @@
 
 
 
-    <a data-url="http://yoursite.com/2019/04/26/epoll反应堆模型/" data-id="cjvdsqt5n000072fki9euopme" class="article-share-link"><i class="fa fa-share"></i>分享到</a>
+    <a data-url="http://yoursite.com/2019/04/26/epoll反应堆模型/" data-id="cjvdtu08s0000r7fkmel7auh8" class="article-share-link"><i class="fa fa-share"></i>分享到</a>
 <script>
     (function ($) {
         $('body').on('click', function() {
@@ -321,7 +309,7 @@
         "dateModified": "2019-05-07",
         "url": "http://yoursite.com/2019/04/26/epoll反应堆模型/",
         "description": "epoll反应堆模型epoll是Linux下多路复用IO接口select/poll的增强版本，它能显著提高程序在大量并发连接中只有少量活跃的情况下的系统CPU利用率，因为它会复用文件描述符集合来传递结果而不用迫使开发者每次等待事件之前都必须重新准备要被侦听的文件描述符集合，另一点原因就是获取事件的时候，它无须遍历整个被侦听的描述符集，只要遍历那些被内核IO事件异步唤醒而加入Ready队列的描述符集"
-        "wordCount": 4294
+        "wordCount": 4300
     }
 </script>
 
@@ -401,6 +389,16 @@
         
 <nav id="article-nav">
     
+        <a href="/2019/05/07/libevent源码剖析-libevent简介/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption">下一篇</strong>
+        <p class="article-nav-title">
+        
+            libevent源码剖析--libevent简介及源码结构
+        
+        </p>
+        <i class="icon fa fa-chevron-right" id="icon-chevron-right"></i>
+    </a>
+    
     
         <a href="/2019/03/18/多态原理探究/" id="article-nav-older" class="article-nav-link-wrap">
         <strong class="article-nav-caption">上一篇</strong>
@@ -422,6 +420,26 @@
         <h3 class="widget-title">最新文章</h3>
         <div class="widget">
             <ul id="recent-post" class>
+                
+                    <li>
+                        
+                        <div class="item-thumbnail">
+                            <a href="/2019/05/07/libevent源码剖析-libevent简介/" class="thumbnail">
+    
+    
+        <span class="thumbnail-image thumbnail-none"></span>
+    
+    
+</a>
+
+                        </div>
+                        
+                        <div class="item-inner">
+                            <p class="item-category"><a class="article-category-link" href="/categories/Linux/">Linux</a></p>
+                            <p class="item-title"><a href="/2019/05/07/libevent源码剖析-libevent简介/" class="title">libevent源码剖析--libevent简介及源码结构</a></p>
+                            <p class="item-date"><time datetime="2019-05-07T12:58:00.000Z" itemprop="datePublished">2019-05-07</time></p>
+                        </div>
+                    </li>
                 
                     <li>
                         
@@ -512,7 +530,7 @@
     <div class="widget-wrap widget-list">
         <h3 class="widget-title">分类</h3>
         <div class="widget">
-            <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-心得/">C++心得</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a><span class="category-list-count">1</span></li></ul>
+            <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-心得/">C++心得</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a><span class="category-list-count">2</span></li></ul>
         </div>
     </div>
 
@@ -522,7 +540,7 @@
     <div class="widget-wrap widget-list">
         <h3 class="widget-title">归档</h3>
         <div class="widget">
-            <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">3</span></li></ul>
+            <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">3</span></li></ul>
         </div>
     </div>
 
@@ -532,7 +550,7 @@
     <div class="widget-wrap widget-list">
         <h3 class="widget-title">标签</h3>
         <div class="widget">
-            <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/网络编程/">网络编程</a><span class="tag-list-count">1</span></li></ul>
+            <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/网络编程/">网络编程</a><span class="tag-list-count">2</span></li></ul>
         </div>
     </div>
 

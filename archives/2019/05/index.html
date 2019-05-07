@@ -6,14 +6,14 @@
     
 
     
-    <title>归档: 2019/4 | Fpp</title>
+    <title>归档: 2019/5 | Fpp</title>
     
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     
     <meta name="description" content="个人学习心得，随笔">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Fpp">
-<meta property="og:url" content="http://yoursite.com/archives/2019/04/index.html">
+<meta property="og:url" content="http://yoursite.com/archives/2019/05/index.html">
 <meta property="og:site_name" content="Fpp">
 <meta property="og:description" content="个人学习心得，随笔">
 <meta property="og:locale" content="zh-CN">
@@ -140,7 +140,7 @@
                         <div class="main-body-header">
     <h1 class="header">
     
-    <i class="icon fa fa-archive"></i>归档: 2019/4
+    <i class="icon fa fa-archive"></i>归档: 2019/5
     </h1>
 </div>
 
@@ -164,17 +164,17 @@
         <article class="article article-summary">
     <div class="article-summary-inner">
         
-        <a href="/2019/04/26/epoll反应堆模型/" class="thumbnail">
+        <a href="/2019/05/07/libevent源码剖析-libevent简介/" class="thumbnail">
     
     
-        <span style="background-image:url(/images/pasted-2.png)" alt="epoll反应堆模型" class="thumbnail-image"></span>
+        <span class="thumbnail-image thumbnail-none"></span>
     
     
         
 <span class="comment-counter">
     <i class="fa fa-comments-o"></i>
     
-        <span class="disqus-comment-count" data-disqus-identifier data-disqus-url="http://yoursite.com/2019/04/26/epoll反应堆模型/">0</span>
+        <span class="disqus-comment-count" data-disqus-identifier data-disqus-url="http://yoursite.com/2019/05/07/libevent源码剖析-libevent简介/">0</span>
     
 </span>
 
@@ -187,17 +187,25 @@
             <div class="category">
             <a class="article-category-link" href="/categories/Linux/">Linux</a>
             </div>
-            <div class="date"><time datetime="2019-04-26T14:01:00.000Z" itemprop="datePublished">2019-04-26</time></div>
+            <div class="date"><time datetime="2019-05-07T12:58:00.000Z" itemprop="datePublished">2019-05-07</time></div>
         </div>
         
     
         <h1 class="article-title" itemprop="name">
-        <a href="/2019/04/26/epoll反应堆模型/">epoll反应堆模型</a>
+        <a href="/2019/05/07/libevent源码剖析-libevent简介/">libevent源码剖析--libevent简介及源码结构</a>
         </h1>
     
 
         <p class="article-excerpt">
-            epoll反应堆模型epoll是Linux下多路复用IO接口select/poll的增强版本，它能显著提高程序在大量并发连接中只有少量活跃的情况下的系统CPU利用率，因为它会复用文件描述符集合来传递结果而不用迫使开发者每次等待事件之前都必须重新准备要被侦听的文件描述符集合，另一点原因就是获取事件的时候，它无须遍历整个被侦听的描述符集，只要遍历那些被内核IO事件异步唤醒而加入Ready队列的描述符集
+            libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：
+
+事件驱动，高性能
+轻量级，专注于网络
+跨平台,支持 Windows、Linux、Mac Os等
+支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等
+支持 I/O,定时器和信号等事件
+
+2、libevent源
         </p>
     </div>
 </article>

@@ -6,20 +6,24 @@
     
 
     
-    <title>归档: 2019/4 | Fpp</title>
+    <title>libevent源码剖析--libevent简介及源码结构 | Fpp</title>
     
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     
-    <meta name="description" content="个人学习心得，随笔">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Fpp">
-<meta property="og:url" content="http://yoursite.com/archives/2019/04/index.html">
+        <meta name="keywords" content="网络编程">
+    
+    <meta name="description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：  事件驱动，高性能 轻量级，专注于网络 跨平台,支持 Windows、Linux、Mac Os等 支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等 支持 I/O,定时器和信号等事件  2、libevent源">
+<meta name="keywords" content="网络编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libevent源码剖析--libevent简介及源码结构">
+<meta property="og:url" content="http://yoursite.com/2019/05/07/libevent源码剖析-libevent简介/index.html">
 <meta property="og:site_name" content="Fpp">
-<meta property="og:description" content="个人学习心得，随笔">
+<meta property="og:description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：  事件驱动，高性能 轻量级，专注于网络 跨平台,支持 Windows、Linux、Mac Os等 支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等 支持 I/O,定时器和信号等事件  2、libevent源">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-05-07T13:25:05.594Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Fpp">
-<meta name="twitter:description" content="个人学习心得，随笔">
+<meta name="twitter:title" content="libevent源码剖析--libevent简介及源码结构">
+<meta name="twitter:description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：  事件驱动，高性能 轻量级，专注于网络 跨平台,支持 Windows、Linux、Mac Os等 支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等 支持 I/O,定时器和信号等事件  2、libevent源">
     
 
     
@@ -140,73 +144,198 @@
                         <div class="main-body-header">
     <h1 class="header">
     
-    <i class="icon fa fa-archive"></i>归档: 2019/4
+    <a class="page-title-link" href="/categories/Linux/">Linux</a>
     </h1>
 </div>
 
                         <div class="main-body-content">
-                            
-
-    
-    
+                            <article id="post-libevent源码剖析-libevent简介" class="article article-single article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
         
-        
-        <section class="archives-wrap">
-            <div class="archive-year-wrap">
-                <a href="/archives/2019" class="archive-year"><i class="icon fa fa-calendar-o"></i>2019</a>
-            </div>
-            <div class="archives">
-    
-    
-    
-        <div class="article-row">
-    
-        <article class="article article-summary">
-    <div class="article-summary-inner">
-        
-        <a href="/2019/04/26/epoll反应堆模型/" class="thumbnail">
-    
-    
-        <span style="background-image:url(/images/pasted-2.png)" alt="epoll反应堆模型" class="thumbnail-image"></span>
-    
-    
-        
-<span class="comment-counter">
-    <i class="fa fa-comments-o"></i>
-    
-        <span class="disqus-comment-count" data-disqus-identifier data-disqus-url="http://yoursite.com/2019/04/26/epoll反应堆模型/">0</span>
-    
-</span>
-
-
-    
-</a>
-
-        
-        <div class="article-meta">
-            <div class="category">
-            <a class="article-category-link" href="/categories/Linux/">Linux</a>
-            </div>
-            <div class="date"><time datetime="2019-04-26T14:01:00.000Z" itemprop="datePublished">2019-04-26</time></div>
-        </div>
-        
+            <header class="article-header">
+                
     
         <h1 class="article-title" itemprop="name">
-        <a href="/2019/04/26/epoll反应堆模型/">epoll反应堆模型</a>
+        libevent源码剖析--libevent简介及源码结构
         </h1>
     
 
-        <p class="article-excerpt">
-            epoll反应堆模型epoll是Linux下多路复用IO接口select/poll的增强版本，它能显著提高程序在大量并发连接中只有少量活跃的情况下的系统CPU利用率，因为它会复用文件描述符集合来传递结果而不用迫使开发者每次等待事件之前都必须重新准备要被侦听的文件描述符集合，另一点原因就是获取事件的时候，它无须遍历整个被侦听的描述符集，只要遍历那些被内核IO事件异步唤醒而加入Ready队列的描述符集
-        </p>
+            </header>
+        
+        
+            <div class="article-meta">
+                
+    <div class="article-date">
+        <a href="/2019/05/07/libevent源码剖析-libevent简介/" class="article-date">
+            <time datetime="2019-05-07T12:58:00.000Z" itemprop="datePublished">2019-05-07</time>
+        </a>
     </div>
-</article>
-    
+
+		
+
+                
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/网络编程/">网络编程</a>
+    </div>
+
+            </div>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+            <h1 id="libevent简介及源码结构"><a href="#libevent简介及源码结构" class="headerlink" title="libevent简介及源码结构"></a>libevent简介及源码结构</h1><h2 id="1、libevent简介"><a href="#1、libevent简介" class="headerlink" title="1、libevent简介"></a>1、libevent简介</h2><p>libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：</p>
+<ul>
+<li>事件驱动，高性能</li>
+<li>轻量级，专注于网络</li>
+<li>跨平台,支持 Windows、Linux、Mac Os等</li>
+<li>支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等</li>
+<li>支持 I/O,定时器和信号等事件</li>
+</ul>
+<h2 id="2、libevent源码结构"><a href="#2、libevent源码结构" class="headerlink" title="2、libevent源码结构"></a>2、libevent源码结构</h2><p>Libevent 的源代码虽然都在一层文件夹下面,但是其代码分类还是相当清晰的,主要可分为<br>头文件、内部使用的头文件、辅助功能函数、日志、libevent 框架、对系统 I/O 多路复用机<br>制的封装、信号管理、定时事件管理、缓冲区管理、基本数据结构和基于 libevent 的两个实<br>用库等几个部分,有些部分可能就是一个源文件。</p>
+<ul>
+<li><p><strong>1)头文件</strong></p>
+<p>主要就是 event.h:事件宏定义、接口函数声明,主要结构体 event 的声明;</p>
+</li>
+<li><p><strong>2)内部头文件</strong></p>
+<p>xxx-internal.h:内部数据结构和函数,对外不可见,以达到信息隐藏的目的;</p>
+</li>
+<li><p><strong>3)libevent 框架</strong></p>
+<p>event.c:event 整体框架的代码实现;</p>
+</li>
+<li><p><strong>4)对系统 I/O 多路复用机制的封装</strong></p>
+<p>epoll.c:对 epoll 的封装;<br>select.c:对 select 的封装;<br>devpoll.c:对 dev/poll 的封装;<br>kqueue.c:对 kqueue 的封装;</p>
+</li>
+<li><p><strong>5)定时事件管理</strong></p>
+<p>min-heap.h:其实就是一个以时间作为 key 的小根堆结构;</p>
+</li>
+<li><p><strong>6)信号管理</strong></p>
+<p>signal.c:对信号事件的处理;</p>
+</li>
+<li><p><strong>7)辅助功能函数</strong></p>
+<p>evutil.h 和 evutil.c:一些辅助功能函数,包括创建 socket pair 和一些时间操作函数:加、减<br>和比较等。</p>
+</li>
+<li><p><strong>8)日志</strong></p>
+<p>log.h 和 log.c:log 日志函数</p>
+</li>
+<li><p><strong>9)缓冲区管理</strong></p>
+<p>evbuffer.c 和 buffer.c:libevent 对缓冲区的封装;</p>
+</li>
+<li><p><strong>10)基本数据结构</strong></p>
+<p>compat\sys 下的两个源文件: queue.h 是 libevent 基本数据结构的实现,包括链表,双向链表,<br>队列等;_libevent_time.h:一些用于时间操作的结构体定义、函数和宏定义;</p>
+</li>
+<li><p><strong>11)实用网络库</strong></p>
+<p>http 和 evdns:是基于 libevent 实现的 http 服务器和异步 dns 查询库</p>
+</li>
+</ul>
+
         </div>
+        <footer class="article-footer">
+            
+
+
+
+    <a data-url="http://yoursite.com/2019/05/07/libevent源码剖析-libevent简介/" data-id="cjvdtu08z0004r7fkla5eigla" class="article-share-link"><i class="fa fa-share"></i>分享到</a>
+<script>
+    (function ($) {
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+        </footer>
+    </div>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "author": {
+            "@type": "Person",
+            "name": "冯泡泡"
+        },
+        "headline": "libevent源码剖析--libevent简介及源码结构",
+        "image": "http://yoursite.com",
+        "keywords": "网络编程",
+        "genre": "Linux",
+        "datePublished": "2019-05-07",
+        "dateCreated": "2019-05-07",
+        "dateModified": "2019-05-07",
+        "url": "http://yoursite.com/2019/05/07/libevent源码剖析-libevent简介/",
+        "description": "libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：
+
+事件驱动，高性能
+轻量级，专注于网络
+跨平台,支持 Windows、Linux、Mac Os等
+支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等
+支持 I/O,定时器和信号等事件
+
+2、libevent源"
+        "wordCount": 67
+    }
+</script>
+
+</article>
+
+    <section id="comments">
     
+        
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
 
-
-    </div></section>
+    
+    </section>
 
 
 
@@ -268,6 +397,19 @@
             
         </ul>
     </div>
+    
+        
+<nav id="article-nav">
+    
+    
+        <a href="/2019/04/26/epoll反应堆模型/" id="article-nav-older" class="article-nav-link-wrap">
+        <strong class="article-nav-caption">上一篇</strong>
+        <p class="article-nav-title">epoll反应堆模型</p>
+        <i class="icon fa fa-chevron-left" id="icon-chevron-left"></i>
+        </a>
+    
+</nav>
+
     
     <div class="widgets-container">
         
@@ -476,11 +618,13 @@
     var disqus_shortname = 'hexo-theme-hueman';
     
     
+    var disqus_url = 'http://yoursite.com/2019/05/07/libevent源码剖析-libevent简介/';
+    
     (function() {
     var dsq = document.createElement('script');
     dsq.type = 'text/javascript';
     dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
     (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
     })();
     </script>
