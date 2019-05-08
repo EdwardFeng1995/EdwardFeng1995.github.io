@@ -266,6 +266,15 @@ img.thumbnail {
   #toc-mask.is-active {
     display: block;
   }
+  body {
+    background-image: url("/images/timg.jpeg");
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: 50% 50%;
+  }
+  #footer a {
+    color: #eee;
+  }
 }
 /* ---------------------------------
  *         Custom modifiers
