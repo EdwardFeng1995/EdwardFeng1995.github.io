@@ -8,8 +8,8 @@ body {
   background-color: #e0ffff;
 }
 body {
-  background-image: url("/images/timg1.jpeg");
-  background-repeat: no-repeat;
+  background-image: url("/images/timg.jpeg");
+  background-repeat: repeat-x;
   background-attachment: fixed;
   background-position: 50% 50%;
 }
