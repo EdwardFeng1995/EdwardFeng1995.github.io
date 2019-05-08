@@ -6,7 +6,7 @@ html {
 }
 body {
   background-image: url("/images/timg1.jpeg");
-  background-repeat: repeat-y;
+  background-repeat: repeat-x;
   background-attachment: fixed;
   background-position: 50% 50%;
 }
