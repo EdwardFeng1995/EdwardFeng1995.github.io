@@ -8,19 +8,19 @@
 
 
 
-    <meta name="description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：  事件驱动，高性能 轻量级，专注于网络 跨平台,支持 Windows、Linux、Mac Os等 支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等 支持 I/O,定时器和信号等事件  2、libevent源">
+    <meta name="description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：">
 <meta name="keywords" content="网络编程">
 <meta property="og:type" content="article">
 <meta property="og:title" content="libevent源码剖析(1)--libevent简介及源码结构">
 <meta property="og:url" content="http://yoursite.com/2019/05/07/libevent源码剖析-libevent简介/index.html">
 <meta property="og:site_name" content="Fpp">
-<meta property="og:description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：  事件驱动，高性能 轻量级，专注于网络 跨平台,支持 Windows、Linux、Mac Os等 支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等 支持 I/O,定时器和信号等事件  2、libevent源">
+<meta property="og:description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
-<meta property="og:updated_time" content="2019-05-07T14:07:11.421Z">
+<meta property="og:updated_time" content="2019-05-08T02:42:59.284Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="libevent源码剖析(1)--libevent简介及源码结构">
-<meta name="twitter:description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：  事件驱动，高性能 轻量级，专注于网络 跨平台,支持 Windows、Linux、Mac Os等 支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等 支持 I/O,定时器和信号等事件  2、libevent源">
+<meta name="twitter:description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：">
 <meta name="twitter:image" content="http://yoursite.com/images/og_image.png">
 
 
@@ -156,7 +156,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    4 分钟 读完 (大约 569 个字)
+                    4 分钟 读完 (大约 570 个字)
                 </span>
                 
                 
@@ -169,7 +169,7 @@
             
         </h1>
         <div class="content">
-            <h1 id="libevent简介及源码结构"><a href="#libevent简介及源码结构" class="headerlink" title="libevent简介及源码结构"></a>libevent简介及源码结构</h1><h2 id="1、libevent简介"><a href="#1、libevent简介" class="headerlink" title="1、libevent简介"></a>1、libevent简介</h2><p>libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：</p>
+            <h1 id="libevent简介及源码结构"><a href="#libevent简介及源码结构" class="headerlink" title="libevent简介及源码结构"></a>libevent简介及源码结构</h1><h2 id="1、libevent简介"><a href="#1、libevent简介" class="headerlink" title="1、libevent简介"></a>1、libevent简介</h2><p>libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：<br><a id="more"></a></p>
 <ul>
 <li>事件驱动，高性能</li>
 <li>轻量级，专注于网络</li>
