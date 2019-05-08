@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<script src="/js/src/click.js"></script>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>libevent源码剖析(4)--事件处理框架 - 愉快的泡泡</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta name="description" content="前面已经对 libevent 的事件处理框架和 event 结构体做了描述,现在是时候剖析 libevent 对事件的详细处理流程了,本节将分析 libevent 的事件处理框架 event_base 和 libevent 注册、 删除事件的具体流程,可结合前一节 libevent 对 event 的管理。">
+<meta name="keywords" content="网络编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libevent源码剖析(4)--事件处理框架">
+<meta property="og:url" content="http://yoursite.com/2019/05/08/libevent源码剖析-4-事件处理框架/index.html">
+<meta property="og:site_name" content="愉快的泡泡">
+<meta property="og:description" content="前面已经对 libevent 的事件处理框架和 event 结构体做了描述,现在是时候剖析 libevent 对事件的详细处理流程了,本节将分析 libevent 的事件处理框架 event_base 和 libevent 注册、 删除事件的具体流程,可结合前一节 libevent 对 event 的管理。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/images/og_image.png">
+<meta property="og:updated_time" content="2019-05-08T12:28:52.285Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="libevent源码剖析(4)--事件处理框架">
+<meta name="twitter:description" content="前面已经对 libevent 的事件处理框架和 event 结构体做了描述,现在是时候剖析 libevent 对事件的详细处理流程了,本节将分析 libevent 的事件处理框架 event_base 和 libevent 注册、 删除事件的具体流程,可结合前一节 libevent 对 event 的管理。">
+<meta name="twitter:image" content="http://yoursite.com/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/images/favicon.svg">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "//hm.baidu.com/hm.js?冯泡泡1995";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/冯泡泡.png" alt="libevent源码剖析(4)--事件处理框架" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">Home</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <!-- 雪花特效 -->
+    <script type="text/javascript">
+      var windowWidth = $(window).width();
+      if (windowWidth > 480) {
+        document.write('<script type="text/javascript" src="/js/src/snow.js"><\/script>');
+      }
+    </script>
+
+    
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-05-08T09:11:00.000Z">2019-05-08</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    20 分钟 读完 (大约 2932 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                libevent源码剖析(4)--事件处理框架
+            
+        </h1>
+        <div class="content">
+            <p>前面已经对 libevent 的事件处理框架和 event 结构体做了描述,现在是时候剖析 libevent 对事件的详细处理流程了,本节将分析 libevent 的事件处理框架 event_base 和 libevent 注册、 删除事件的具体流程,可结合前一节 libevent 对 event 的管理。</p>
+<a id="more"></a>
+<h2 id="1、事件处理框架"><a href="#1、事件处理框架" class="headerlink" title="1、事件处理框架"></a>1、事件处理框架</h2><p>回想 Reactor 模式的几个基本组件,本节讲解的部分对应于 Reactor 框架组件。在 libevent<br>中,这就表现为 event_base 结构体,结构体声明如下,它位于 event-internal.h 文件中:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_base</span> &#123;</span></span><br><span class="line">	<span class="hljs-keyword">const</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">eventop</span> *<span class="hljs-title">evsel</span>;</span></span><br><span class="line">	<span class="hljs-keyword">void</span> *evbase;</span><br><span class="line">	<span class="hljs-keyword">int</span> event_count;		<span class="hljs-comment">/* counts number of total events */</span></span><br><span class="line">	<span class="hljs-keyword">int</span> event_count_active;	<span class="hljs-comment">/* counts number of active events */</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">int</span> event_gotterm;		<span class="hljs-comment">/* Set to terminate loop */</span></span><br><span class="line">	<span class="hljs-keyword">int</span> event_break;		<span class="hljs-comment">/* Set to terminate loop immediately */</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* active event management */</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_list</span> **<span class="hljs-title">activequeues</span>;</span></span><br><span class="line">	<span class="hljs-keyword">int</span> nactivequeues;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* signal handling info */</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">evsignal_info</span> <span class="hljs-title">sig</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_list</span> <span class="hljs-title">eventqueue</span>;</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timeval</span> <span class="hljs-title">event_tv</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">min_heap</span> <span class="hljs-title">timeheap</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timeval</span> <span class="hljs-title">tv_cache</span>;</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>下面详细解释一下结构体中各字段的含义。</p>
+<ul>
+<li><p>1）<strong>evsel和evbase</strong> 这两个字段的设置可能会让人有些迷惑，这里你可以把evsel和evbase看作是类和静态函数的关系，比如添加事件时的调用行为：evsel-&gt;add(evbase, ev)，实际执行操作的是evbase；这相当于class::add(instance, ev)，instance就是class的一个对象实例。</p>
+<p>evsel指向了全局变量static const struct eventop * eventops[]中的一个；前面也说过，libevent将系统提供的I/O demultiplex机制统一封装成了eventop结构；因此eventops[]包含了select、poll、kequeue和epoll等等其中的若干个全局实例对象。</p>
+<p> evbase实际上是一个eventop实例对象；</p>
+<p> 先来看看eventop结构体，它的成员是一系列的函数指针,  在event-internal.h文件中：</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">//一系列函数指针，对应epoll,select,poll等I/O demultiplex的五个接口函数</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">eventop</span> &#123;</span></span><br><span class="line">	<span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> *name;</span><br><span class="line">	<span class="hljs-keyword">void</span> *(*init)(struct event_base *);</span><br><span class="line">	<span class="hljs-keyword">int</span> (*add)(<span class="hljs-keyword">void</span> *, struct event *);</span><br><span class="line">	<span class="hljs-keyword">int</span> (*del)(<span class="hljs-keyword">void</span> *, struct event *);</span><br><span class="line">	<span class="hljs-keyword">int</span> (*dispatch)(struct event_base *, <span class="hljs-keyword">void</span> *, struct timeval *);</span><br><span class="line">	<span class="hljs-keyword">void</span> (*dealloc)(struct event_base *, <span class="hljs-keyword">void</span> *);</span><br><span class="line">	<span class="hljs-comment">/* set if we need to reinitialize the event base */</span></span><br><span class="line">	<span class="hljs-keyword">int</span> need_reinit;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>再来看全局变量static const struct eventop * eventops[]，在event.h文件中，该变量定义了几种可选的I/O demultiplex机制：</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">  <span class="hljs-comment">/* In order of preference */</span></span><br><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">const</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">eventop</span> *<span class="hljs-title">eventops</span>[] = &#123;</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_EVENT_PORTS</span></span><br><span class="line">	&amp;evportops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_WORKING_KQUEUE</span></span><br><span class="line">	&amp;kqops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_EPOLL</span></span><br><span class="line">	&amp;epollops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_DEVPOLL</span></span><br><span class="line">	&amp;devpollops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_POLL</span></span><br><span class="line">	&amp;pollops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_SELECT</span></span><br><span class="line">	&amp;selectops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> WIN32</span></span><br><span class="line">	&amp;win32ops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line">	<span class="hljs-literal">NULL</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>也就是说，在libevent中，每种I/O demultiplex机制的实现都必须提供这五个函数接口，来完成自身的初始化、销毁释放；对事件的注册、注销和分发。</p>
+<p>比如对于epoll，libevent 实现了5个对应的接口函数，并在初始化时并将eventop的5个函数指针指向这5个函数，那么程序就可以使用epoll作为I/O demultiplex机制了，这个在后面会再次提到。</p>
+</li>
+</ul>
+<ul>
+<li><p>2）<strong>activequeues</strong> 是一个二级指针，前面讲过libevent支持事件优先级，因此你可以把它看作是数组，其中的元素activequeues[priority]是一个链表，链表的每个节点指向一个优先级为priority的就绪事件event。</p>
+</li>
+<li><p>3）<strong>eventqueue</strong>，链表，保存了所有的注册事件event的指针。</p>
+</li>
+<li><p>4）<strong>sig</strong>是用来管理信号的结构体，将在后面信号处理时专门讲解；</p>
+</li>
+<li><p>5）<strong>timeheap</strong>是管理定时事件的小根堆，将在后面定时事件处理时专门讲解；</p>
+</li>
+<li><p>6）<strong>event_tv和tv_cache</strong>是libevent用于时间管理的变量，将在后面讲到；其它各个变量都能因名知意，就不再啰嗦了。</p>
+</li>
+</ul>
+<h2 id="2、创建和初始化event-base"><a href="#2、创建和初始化event-base" class="headerlink" title="2、创建和初始化event_base"></a>2、创建和初始化event_base</h2><p>创建一个event_base 对象也既是创建了一个新的libevent 实例，程序需要通过调用event_init()（内部调用event_base_new函数执行具体操作）函数来创建，该函数同时还对新生成的libevent实例进行了初始化。<br>该函数如下：<br><figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_base</span> *</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-title">event_init</span>(<span class="hljs-title">void</span>)</span></span><br><span class="line"><span class="hljs-class">&#123;</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_base</span> *<span class="hljs-title">base</span> = <span class="hljs-title">event_base_new</span>();</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (base != <span class="hljs-literal">NULL</span>)</span><br><span class="line">		current_base = base;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">return</span> (base);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">//event_base_new()函数实现</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_base</span> *</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-title">event_base_new</span>(<span class="hljs-title">void</span>)</span></span><br><span class="line"><span class="hljs-class">&#123;</span></span><br><span class="line">	<span class="hljs-keyword">int</span> i;</span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_base</span> *<span class="hljs-title">base</span>;</span></span><br><span class="line">	</span><br><span class="line">    <span class="hljs-comment">//分配实例空间</span></span><br><span class="line">	<span class="hljs-keyword">if</span> ((base = <span class="hljs-built_in">calloc</span>(<span class="hljs-number">1</span>, <span class="hljs-keyword">sizeof</span>(struct event_base))) == <span class="hljs-literal">NULL</span>)</span><br><span class="line">		event_err(<span class="hljs-number">1</span>, <span class="hljs-string">"%s: calloc"</span>, __func__);</span><br><span class="line"></span><br><span class="line">	event_sigcb = <span class="hljs-literal">NULL</span>;</span><br><span class="line">	event_gotsig = <span class="hljs-number">0</span>;</span><br><span class="line"></span><br><span class="line">	detect_monotonic();</span><br><span class="line">	gettime(base, &amp;base-&gt;event_tv);</span><br><span class="line">	</span><br><span class="line">	min_heap_ctor(&amp;base-&gt;timeheap);</span><br><span class="line">	TAILQ_INIT(&amp;base-&gt;eventqueue);</span><br><span class="line">	base-&gt;sig.ev_signal_pair[<span class="hljs-number">0</span>] = <span class="hljs-number">-1</span>;</span><br><span class="line">	base-&gt;sig.ev_signal_pair[<span class="hljs-number">1</span>] = <span class="hljs-number">-1</span>;</span><br><span class="line">	</span><br><span class="line">    <span class="hljs-comment">//初始化决定使用哪种I/O demultiplex机制</span></span><br><span class="line">	base-&gt;evbase = <span class="hljs-literal">NULL</span>;</span><br><span class="line">	<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; eventops[i] &amp;&amp; !base-&gt;evbase; i++) &#123;</span><br><span class="line">    	<span class="hljs-comment">//确定使用哪种I/O demultiplex机制</span></span><br><span class="line">		base-&gt;evsel = eventops[i];   </span><br><span class="line">        </span><br><span class="line">		<span class="hljs-comment">//实例化一个evsel，例如evsel为epoll，相当于调用epoll的init函数创建一个epoll实例 </span></span><br><span class="line">		base-&gt;evbase = base-&gt;evsel-&gt;init(base);    </span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (base-&gt;evbase == <span class="hljs-literal">NULL</span>)</span><br><span class="line">		event_errx(<span class="hljs-number">1</span>, <span class="hljs-string">"%s: no event mechanism available"</span>, __func__);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (evutil_getenv(<span class="hljs-string">"EVENT_SHOW_METHOD"</span>)) </span><br><span class="line">		event_msgx(<span class="hljs-string">"libevent using: %s\n"</span>,</span><br><span class="line">			   base-&gt;evsel-&gt;name);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* allocate a single active event queue */</span></span><br><span class="line">	event_base_priority_init(base, <span class="hljs-number">1</span>);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">return</span> (base);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>该函数首先为event_base实例申请空间，然后初始化timer mini-heap，选择并初始化合适的系统I/O 的demultiplexer机制，初始化各事件链表；函数还检测了系统的时间设置，为后面的时间管理打下基础。</p>
+<h2 id="3、接口函数"><a href="#3、接口函数" class="headerlink" title="3、接口函数"></a>3、接口函数</h2><p>前面提到Reactor框架（管理器）的作用就是提供事件的注册、注销接口；根据系统提供的事件多<br>路分发机制执行事件循环，当有事件进入“就绪”状态时，调用注册事件的回调函数来处理<br>事件。<br>Libevent中对应的接口函数主要就是：</p>
+<ul>
+<li><p>int event_add(struct event<em>ev, const struct timeval</em>timeout);</p>
+</li>
+<li><p>int event_del(struct event*ev);</p>
+</li>
+<li><p>int event_base_loop(struct event_base*base, int loops);</p>
+</li>
+<li><p>void event_active(struct event*event, int res, short events);</p>
+</li>
+<li><p>void event_process_active(struct event_base*base);</p>
+</li>
+</ul>
+<p>本节将按介绍事件注册和删除的代码流程，libevent 的事件循环框架将在下一节再具体描述。<br>对于定时事件，这些函数将调用timer heap管理接口执行插入和删除操作；对于I/O和Signal事件将调用eventopadd和delete接口函数执行插入和删除操作（eventop会对Signal事件调用Signal处理接口执行操作）；这些组件将在后面的内容描述。</p>
+<ul>
+<li><p>1）注册事件</p>
+<p>函数原型：</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">event_add</span><span class="hljs-params">(struct event*ev, <span class="hljs-keyword">const</span> struct timeval*tv)</span></span></span><br></pre></td></tr></table></figure>
+<p>参数：ev：指向要注册的事件；</p>
+<p>tv：超时时间；</p>
+<p>函数将ev注册到ev-&gt;ev_base上，事件类型由ev-&gt;ev_events指明，如果注册成功，ev将被插入到已注册链表中；如果tv不是NULL，则会同时注册定时事件，将ev添加到timer堆上；</p>
+<p>如果其中有一步操作失败，那么函数保证没有事件会被注册，可以讲这相当于一个原子操作。这个函数也体现了libevent细节之处的巧妙设计，且仔细看程序代码，部分有省略，注释直接附在代码中。</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span></span><br><span class="line">event_add(struct event *ev, <span class="hljs-keyword">const</span> struct timeval *tv)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_base</span> *<span class="hljs-title">base</span> = <span class="hljs-title">ev</span>-&gt;<span class="hljs-title">ev_base</span>;</span>    <span class="hljs-comment">//要注册到的event_base</span></span><br><span class="line">	<span class="hljs-keyword">const</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">eventop</span> *<span class="hljs-title">evsel</span> = <span class="hljs-title">base</span>-&gt;<span class="hljs-title">evsel</span>;</span></span><br><span class="line">	<span class="hljs-keyword">void</span> *evbase = base-&gt;evbase;    <span class="hljs-comment">//base使用的系统I/O策略</span></span><br><span class="line">	<span class="hljs-keyword">int</span> res = <span class="hljs-number">0</span>;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//定义在log.h中</span></span><br><span class="line">	event_debug((</span><br><span class="line">		 <span class="hljs-string">"event_add: event: %p, %s%s%scall %p"</span>,</span><br><span class="line">		 ev,</span><br><span class="line">		 ev-&gt;ev_events &amp; EV_READ ? <span class="hljs-string">"EV_READ "</span> : <span class="hljs-string">" "</span>,</span><br><span class="line">		 ev-&gt;ev_events &amp; EV_WRITE ? <span class="hljs-string">"EV_WRITE "</span> : <span class="hljs-string">" "</span>,</span><br><span class="line">		 tv ? <span class="hljs-string">"EV_TIMEOUT "</span> : <span class="hljs-string">" "</span>,</span><br><span class="line">		 ev-&gt;ev_callback));</span><br><span class="line"></span><br><span class="line">	assert(!(ev-&gt;ev_flags &amp; ~EVLIST_ALL));</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">	 * prepare for timeout insertion further below, if we get a</span></span><br><span class="line"><span class="hljs-comment">	 * failure on any step, we should not change any state.</span></span><br><span class="line"><span class="hljs-comment">	 */</span></span><br><span class="line"></span><br><span class="line">	 <span class="hljs-comment">// 新的timer事件，调用timer heap接口在堆上预留一个位置</span></span><br><span class="line"> 	 <span class="hljs-comment">// 注：这样能保证该操作的原子性：</span></span><br><span class="line"> 	 <span class="hljs-comment">// 向系统I/O机制注册可能会失败，而当在堆上预留成功后，</span></span><br><span class="line">     <span class="hljs-comment">// 定时事件的添加将肯定不会失败；</span></span><br><span class="line">     <span class="hljs-comment">// 而预留位置的可能结果是堆扩充，但是内部元素并不会改变</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (tv != <span class="hljs-literal">NULL</span> &amp;&amp; !(ev-&gt;ev_flags &amp; EVLIST_TIMEOUT)) &#123;</span><br><span class="line">		<span class="hljs-keyword">if</span> (min_heap_reserve(&amp;base-&gt;timeheap,</span><br><span class="line">			<span class="hljs-number">1</span> + min_heap_size(&amp;base-&gt;timeheap)) == <span class="hljs-number">-1</span>)</span><br><span class="line">			<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);  <span class="hljs-comment">/* ENOMEM == errno */</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">// 如果事件ev不在已注册或者激活链表中,则调用evbase注册事件</span></span><br><span class="line">	<span class="hljs-keyword">if</span> ((ev-&gt;ev_events &amp; (EV_READ|EV_WRITE|EV_SIGNAL)) &amp;&amp;</span><br><span class="line">	    !(ev-&gt;ev_flags &amp; (EVLIST_INSERTED|EVLIST_ACTIVE))) &#123;</span><br><span class="line">		res = evsel-&gt;add(evbase, ev);</span><br><span class="line">		<span class="hljs-keyword">if</span> (res != <span class="hljs-number">-1</span>)   <span class="hljs-comment">//注册成功，插入event到已注册链表中</span></span><br><span class="line">			event_queue_insert(base, ev, EVLIST_INSERTED);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* </span></span><br><span class="line"><span class="hljs-comment">	 * we should change the timout state only if the previous event</span></span><br><span class="line"><span class="hljs-comment">	 * addition succeeded.</span></span><br><span class="line"><span class="hljs-comment">	 */</span></span><br><span class="line">	<span class="hljs-comment">//准备添加定时事件</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (res != <span class="hljs-number">-1</span> &amp;&amp; tv != <span class="hljs-literal">NULL</span>) &#123;</span><br><span class="line">		<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timeval</span> <span class="hljs-title">now</span>;</span></span><br><span class="line"></span><br><span class="line">		<span class="hljs-comment">/* </span></span><br><span class="line"><span class="hljs-comment">		 * we already reserved memory above for the case where we</span></span><br><span class="line"><span class="hljs-comment">		 * are not replacing an exisiting timeout.</span></span><br><span class="line"><span class="hljs-comment">		 */</span></span><br><span class="line">		<span class="hljs-comment">//EVLIST_TIMEOUT表明event已经在定时器堆中了，删除旧的</span></span><br><span class="line">		<span class="hljs-keyword">if</span> (ev-&gt;ev_flags &amp; EVLIST_TIMEOUT)</span><br><span class="line">			event_queue_remove(base, ev, EVLIST_TIMEOUT);</span><br><span class="line"></span><br><span class="line">		<span class="hljs-comment">/* Check if it is active due to a timeout.  Rescheduling</span></span><br><span class="line"><span class="hljs-comment">		 * this timeout before the callback can be executed</span></span><br><span class="line"><span class="hljs-comment">		 * removes it from the active list. */</span></span><br><span class="line">		<span class="hljs-comment">//如果事件已经是就绪状态则从激活链表中删除</span></span><br><span class="line">		<span class="hljs-keyword">if</span> ((ev-&gt;ev_flags &amp; EVLIST_ACTIVE) &amp;&amp;</span><br><span class="line">		    (ev-&gt;ev_res &amp; EV_TIMEOUT)) &#123;</span><br><span class="line">			<span class="hljs-comment">/* See if we are just active executing this</span></span><br><span class="line"><span class="hljs-comment">			 * event in a loop</span></span><br><span class="line"><span class="hljs-comment">			 */</span></span><br><span class="line">			<span class="hljs-comment">//将ev_callback调用次数设置为0</span></span><br><span class="line">			<span class="hljs-keyword">if</span> (ev-&gt;ev_ncalls &amp;&amp; ev-&gt;ev_pncalls) &#123;</span><br><span class="line">				<span class="hljs-comment">/* Abort loop */</span></span><br><span class="line">				*ev-&gt;ev_pncalls = <span class="hljs-number">0</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			</span><br><span class="line">			event_queue_remove(base, ev, EVLIST_ACTIVE);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="hljs-comment">//计算时间，并插入到timer小根堆中</span></span><br><span class="line">		gettime(base, &amp;now);</span><br><span class="line">		evutil_timeradd(&amp;now, tv, &amp;ev-&gt;ev_timeout);</span><br><span class="line"></span><br><span class="line">		event_debug((</span><br><span class="line">			 <span class="hljs-string">"event_add: timeout in %ld seconds, call %p"</span>,</span><br><span class="line">			 tv-&gt;tv_sec, ev-&gt;ev_callback));</span><br><span class="line"></span><br><span class="line">		event_queue_insert(base, ev, EVLIST_TIMEOUT);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">return</span> (res);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>event_queue_insert()负责将事件插入到对应的链表中,下面是程序代码;</p>
+<p>event_queue_remove()负责将事件从对应的链表中删除,这里就不再重复贴代码了;</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">void</span></span><br><span class="line">event_queue_insert(struct event_base *base, struct event *ev, <span class="hljs-keyword">int</span> <span class="hljs-built_in">queue</span>)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-comment">//ev可能已经在激活列表中了，避免重复插入</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_flags &amp; <span class="hljs-built_in">queue</span>) &#123;</span><br><span class="line">		<span class="hljs-comment">/* Double insertion is possible for active events */</span></span><br><span class="line">		<span class="hljs-keyword">if</span> (<span class="hljs-built_in">queue</span> &amp; EVLIST_ACTIVE)</span><br><span class="line">			<span class="hljs-keyword">return</span>;</span><br><span class="line"></span><br><span class="line">		event_errx(<span class="hljs-number">1</span>, <span class="hljs-string">"%s: %p(fd %d) already on queue %x"</span>, __func__,</span><br><span class="line">			   ev, ev-&gt;ev_fd, <span class="hljs-built_in">queue</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (~ev-&gt;ev_flags &amp; EVLIST_INTERNAL)</span><br><span class="line">		base-&gt;event_count++;</span><br><span class="line"></span><br><span class="line">	ev-&gt;ev_flags |= <span class="hljs-built_in">queue</span>; <span class="hljs-comment">//记录queue标记</span></span><br><span class="line">	<span class="hljs-keyword">switch</span> (<span class="hljs-built_in">queue</span>) &#123;</span><br><span class="line">	<span class="hljs-keyword">case</span> EVLIST_INSERTED:  <span class="hljs-comment">//I/O或Signal事件，加入已注册事件链表</span></span><br><span class="line">		TAILQ_INSERT_TAIL(&amp;base-&gt;eventqueue, ev, ev_next);</span><br><span class="line">		<span class="hljs-keyword">break</span>;</span><br><span class="line">	<span class="hljs-keyword">case</span> EVLIST_ACTIVE:    <span class="hljs-comment">//就绪事件，加入已注册事件链表</span></span><br><span class="line">		base-&gt;event_count_active++;</span><br><span class="line">		TAILQ_INSERT_TAIL(base-&gt;activequeues[ev-&gt;ev_pri],</span><br><span class="line">		    ev,ev_active_next);</span><br><span class="line">		<span class="hljs-keyword">break</span>;</span><br><span class="line">	<span class="hljs-keyword">case</span> EVLIST_TIMEOUT: &#123;  <span class="hljs-comment">//定时事件，加入堆</span></span><br><span class="line">		min_heap_push(&amp;base-&gt;timeheap, ev);</span><br><span class="line">		<span class="hljs-keyword">break</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="hljs-keyword">default</span>:</span><br><span class="line">		event_errx(<span class="hljs-number">1</span>, <span class="hljs-string">"%s: unknown queue %x"</span>, __func__, <span class="hljs-built_in">queue</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2)删除事件</p>
+<p>函数原型为：</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">event_del</span><span class="hljs-params">(struct event*ev)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>该函数将删除事件ev，对于I/O事件，从I/O 的demultiplexer上将事件注销；对于Signal事件，将从Signal事件链表中删除；对于定时事件，将从堆上删除；</p>
+<p>同样删除事件的操作则不一定是原子的，比如删除时间事件之后，有可能从系统I/O机制中注销会失败。</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">  <span class="hljs-keyword">int</span></span><br><span class="line">event_del(struct event *ev)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_base</span> *<span class="hljs-title">base</span>;</span></span><br><span class="line">	<span class="hljs-keyword">const</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">eventop</span> *<span class="hljs-title">evsel</span>;</span></span><br><span class="line">	<span class="hljs-keyword">void</span> *evbase;</span><br><span class="line"></span><br><span class="line">	event_debug((<span class="hljs-string">"event_del: %p, callback %p"</span>,</span><br><span class="line">		 ev, ev-&gt;ev_callback));</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* An event without a base has not been added */</span></span><br><span class="line">	<span class="hljs-comment">//ev_base为NULL，表明ev没有被注册</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_base == <span class="hljs-literal">NULL</span>)</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//取得注册的event_base和eventop指针</span></span><br><span class="line">	base = ev-&gt;ev_base;</span><br><span class="line">	evsel = base-&gt;evsel;</span><br><span class="line">	evbase = base-&gt;evbase;</span><br><span class="line"></span><br><span class="line">	assert(!(ev-&gt;ev_flags &amp; ~EVLIST_ALL));</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* See if we are just active executing this event in a loop */</span></span><br><span class="line">	<span class="hljs-comment">//将ev_callback调用次数设置为0</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_ncalls &amp;&amp; ev-&gt;ev_pncalls) &#123;</span><br><span class="line">		<span class="hljs-comment">/* Abort loop */</span></span><br><span class="line">		*ev-&gt;ev_pncalls = <span class="hljs-number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//从对应的链表中删除</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_flags &amp; EVLIST_TIMEOUT)</span><br><span class="line">		event_queue_remove(base, ev, EVLIST_TIMEOUT);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_flags &amp; EVLIST_ACTIVE)</span><br><span class="line">		event_queue_remove(base, ev, EVLIST_ACTIVE);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_flags &amp; EVLIST_INSERTED) &#123;</span><br><span class="line">		event_queue_remove(base, ev, EVLIST_INSERTED);</span><br><span class="line">		<span class="hljs-comment">//EVLIST_INSERTED表明I/O或者Signal事件</span></span><br><span class="line">		<span class="hljs-comment">//需要调用I/O demultiplexer注销事件</span></span><br><span class="line">		<span class="hljs-keyword">return</span> (evsel-&gt;del(evbase, ev));</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="4、小结"><a href="#4、小结" class="headerlink" title="4、小结"></a>4、小结</h2><p>分析了 event_base 这一重要结构体,初步看到了 libevent 对系统的 I/O demultiplex 机制的封装 event_op 结构,并结合源代码分析了事件的注册和删除处理,下面将会接着分析事件管理框架中的主事件循环部<br>分。</p>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/网络编程/">网络编程</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipay.jpg" alt="支付宝"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/05/08/libevent源码剖析-3-核心event/">
+                <span class="level-item">libevent源码剖析(3)--核心event</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="lv-container" data-id="city" data-uid="冯泡泡">
+    <script type="text/javascript">
+        (function(d, s) {
+            var j, e = d.getElementsByTagName(s)[0];
+
+            if (typeof LivereTower === 'function') { return; }
+
+            j = d.createElement(s);
+            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+            j.async = true;
+
+            e.parentNode.insertBefore(j, e);
+        })(document, 'script');
+    </script>
+    <noscript> Please activate JavaScript for write a comment in LiveRe</noscript>
+</div>
+
+    </div>
+</div>
+</div>
+                
+
+<!-- 粘贴的部分 -->
+                          <!-- 修改，可选保留的栏 -->
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/头像.png" alt="冯泡泡">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        冯泡泡
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        快乐地撸撸代码，安静地品品生活
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>China,Chengdu</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        8
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        2
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        1
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/EdwardFeng1995" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/EdwardFeng1995">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Facebook" href="https://facebook.com">
+                
+                <i class="fab fa-facebook"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Twitter" href="https://twitter.com">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://dribbble.com">
+                
+                <i class="fab fa-dribbble"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="https://hexo.io" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">Hexo</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">hexo.io</span>
+                    </span>
+                </a>
+            </li>
+        
+            <li>
+                <a class="level is-mobile" href="https://github.com/ppoffice" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">PPOffice</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">github.com</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/C-心得/">
+            <span class="level-start">
+                <span class="level-item">C++心得</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Linux/">
+            <span class="level-start">
+                <span class="level-item">Linux</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">5</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            标签云
+        </h3>
+        <a href="/tags/网络编程/" style="font-size: 10px;">网络编程</a>
+    </div>
+</div>
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen is-sticky">
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            
+            <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(4)--事件处理框架">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-08T09:11:00.000Z">2019-05-08</time></div>
+                    <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="has-link-black-ter is-size-6">libevent源码剖析(4)--事件处理框架</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(3)--核心event">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-08T07:28:00.000Z">2019-05-08</time></div>
+                    <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="has-link-black-ter is-size-6">libevent源码剖析(3)--核心event</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/07/libevent源码剖析-Reactor模式/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(2)--Reactor模式">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-07T13:30:00.000Z">2019-05-07</time></div>
+                    <a href="/2019/05/07/libevent源码剖析-Reactor模式/" class="has-link-black-ter is-size-6">libevent源码剖析(2)--Reactor模式</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/07/libevent源码剖析-libevent简介/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(1)--libevent简介及源码结构">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-07T12:58:00.000Z">2019-05-07</time></div>
+                    <a href="/2019/05/07/libevent源码剖析-libevent简介/" class="has-link-black-ter is-size-6">libevent源码剖析(1)--libevent简介及源码结构</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/04/26/epoll反应堆模型/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="epoll反应堆模型">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-04-26T14:01:00.000Z">2019-04-26</time></div>
+                    <a href="/2019/04/26/epoll反应堆模型/" class="has-link-black-ter is-size-6">epoll反应堆模型</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/网络编程/">
+                        <span class="tag">网络编程</span>
+                        <span class="tag is-grey">5</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+
+                
+
+<!-- 粘贴的部分 -->
+
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/冯泡泡.png" alt="libevent源码剖析(4)--事件处理框架" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2019 冯泡泡&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                <br>
+                <span id="busuanzi_container_site_uv">
+                共<span id="busuanzi_value_site_uv">0</span>个访客
+                </span>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+<span id="busuanzi_container_site_pv" class="theme-info">
+  |  本站总访问量<span id="busuanzi_value_site_pv">span>次
+ span>
+ <span id="busuanzi_container_site_uv" class="theme-info">
+  |  本站访客数<span id="busuanzi_value_site_uv">span>人次
+ span>
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">script>
+
+<span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>
+            <script>
+                var now = new Date(); 
+                function createtime() { 
+                    var grt= new Date("3/1/2019 12:00:00");//此处修改你的建站时间或者网站上线时间 
+                    now.setTime(now.getTime()+250); 
+                    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days); 
+                    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours); 
+                    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum); 
+                    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;} 
+                    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum); 
+                    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;} 
+                    document.getElementById("timeDate").innerHTML = "本站已安全运行 "+dnum+" 天 "; 
+                    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒"; 
+                } 
+            setInterval("createtime()",250);
+</script>
+
+</span></span></span></span>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+
+</body>
+</html>
