@@ -17,7 +17,7 @@
 <meta property="og:description" content="Reactor模式整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。 在事件驱动的应用中,同步地、有序地处理同时接收的多个服务请求。在分布式系统尤其是服务器这一类事件驱动应用中,虽然这些请求最终会被序列化地处理,但是必须时刻准备着处理多个同时到来的服务请求。在实际应用 中,这些请求总是通过一个事件(如CONNECTOR、R">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
-<meta property="og:updated_time" content="2019-05-07T14:07:03.241Z">
+<meta property="og:updated_time" content="2019-05-08T02:35:57.530Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="libevent源码剖析(2)--Reactor模式">
 <meta name="twitter:description" content="Reactor模式整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。 在事件驱动的应用中,同步地、有序地处理同时接收的多个服务请求。在分布式系统尤其是服务器这一类事件驱动应用中,虽然这些请求最终会被序列化地处理,但是必须时刻准备着处理多个同时到来的服务请求。在实际应用 中,这些请求总是通过一个事件(如CONNECTOR、R">
@@ -156,7 +156,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    11 分钟 读完 (大约 1674 个字)
+                    11 分钟 读完 (大约 1675 个字)
                 </span>
                 
                 
@@ -210,7 +210,7 @@
 <li>(1)创建Reactor</li>
 <li>(2)注册事件处理器（Reactor::register_handler()）</li>
 <li>(3)调用事件多路分发器进入无限事件循环（Reacor:handle_events）</li>
-<li>(4)当操作系统通知某描述符状态就绪时，事件多路分发器找出并调用此描述符注册的事件处理器。</li>
+<li>(4)当操作系统通知某描述符状态就绪时，事件多路分发器找出并调用此描述符注册的事件处理器。<a id="more"></a> </li>
 </ul>
 
         </div>
