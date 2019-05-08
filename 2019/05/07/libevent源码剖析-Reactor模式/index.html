@@ -8,19 +8,19 @@
 
 
 
-    <meta name="description" content="Reactor模式整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。">
+    <meta name="description" content="Reactor模式 整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。">
 <meta name="keywords" content="网络编程">
 <meta property="og:type" content="article">
 <meta property="og:title" content="libevent源码剖析(2)--Reactor模式">
 <meta property="og:url" content="http://yoursite.com/2019/05/07/libevent源码剖析-Reactor模式/index.html">
 <meta property="og:site_name" content="Fpp">
-<meta property="og:description" content="Reactor模式整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。">
+<meta property="og:description" content="Reactor模式 整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
-<meta property="og:updated_time" content="2019-05-08T02:40:45.421Z">
+<meta property="og:updated_time" content="2019-05-08T08:25:54.478Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="libevent源码剖析(2)--Reactor模式">
-<meta name="twitter:description" content="Reactor模式整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。">
+<meta name="twitter:description" content="Reactor模式 整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。">
 <meta name="twitter:image" content="http://yoursite.com/images/og_image.png">
 
 
@@ -181,7 +181,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    11 分钟 读完 (大约 1675 个字)
+                    11 分钟 读完 (大约 1680 个字)
                 </span>
                 
                 
@@ -199,7 +199,8 @@ var _hmt = _hmt || [];
             
         </h1>
         <div class="content">
-            <h1 id="Reactor模式"><a href="#Reactor模式" class="headerlink" title="Reactor模式"></a>Reactor模式</h1><p>整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。</p>
+            <h1 id="Reactor模式"><a href="#Reactor模式" class="headerlink" title="Reactor模式"></a>Reactor模式</h1><p><img src="/images/pasted-7.png" alt="upload successful"></p>
+<p>整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。</p>
 <a id="more"></a>
 <p>在事件驱动的应用中,同步地、有序地处理同时接收的多个服务请求。在分布式系统尤其是服务器这一类事件驱动应用中,虽然这些请求最终会被序列化地处理,但是必须时刻准备着处理多个同时到来的服务请求。在实际应用 中,这些请求总是通过一个事件(如CONNECTOR、READ、WRITE等)来表示的。在有序地处理这些服务请求之前,应用程序必须先分离和调度这些 同时到达的事件。</p>
 <p>为了有效地解决这个问题,我们需要做到以下4方面:为了提高系统的可测量性和反应时间,应用程序不能长时间阻塞在某个事件源上而停止对其他事件的处理,这样会严重降低对客户端的响应度。为了提高吞吐量,任何没有必要的上下文切换、同步和CPU之间的数据移动都要避免。引进新的服务或改良已有的服务都要对既有的事件分离和调度机制带来尽可能小的影响。大量的应用程序代码需要隐藏在复杂的多线程和同步机制之后。</p>
@@ -212,10 +213,14 @@ var _hmt = _hmt || [];
 <p>“Reactor”公司 HR 就记下了你的联系方式,结果出来后会主动打电话通知你:有没有被录取啊,还是被据了;你不用自己打电话去问结果,事实上也不能,你没有HR的留联系方式。</p>
 <h2 id="2、Reactor模式的优点"><a href="#2、Reactor模式的优点" class="headerlink" title="2、Reactor模式的优点"></a>2、Reactor模式的优点</h2><p>Reactor 模式是编写高性能网络服务器的必备技术之一,它具有如下的优点:</p>
 <ul>
-<li>1)响应快,不必为单个同步时间所阻塞,虽然 Reactor 本身依然是同步的;</li>
-<li>2)编程相对简单,可以最大程度的避免复杂的多线程及同步问题,并且避免了多线程/进程的切换开销;</li>
-<li>3)可扩展性,可以方便的通过增加 Reactor 实例个数来充分利用 CPU 资源;</li>
-<li>4)可复用性,reactor 框架本身与具体事件处理逻辑无关,具有很高的复用性;</li>
+<li><p>1)响应快,不必为单个同步时间所阻塞,虽然 Reactor 本身依然是同步的;</p>
+</li>
+<li><p>2)编程相对简单,可以最大程度的避免复杂的多线程及同步问题,并且避免了多线程/进程的切换开销;</p>
+</li>
+<li><p>3)可扩展性,可以方便的通过增加 Reactor 实例个数来充分利用 CPU 资源;</p>
+</li>
+<li><p>4)可复用性,reactor 框架本身与具体事件处理逻辑无关,具有很高的复用性;</p>
+</li>
 </ul>
 <h2 id="3、Reactor模式框架"><a href="#3、Reactor模式框架" class="headerlink" title="3、Reactor模式框架"></a>3、Reactor模式框架</h2><ul>
 <li><p><strong>描述符(handle)</strong></p>
@@ -238,10 +243,14 @@ var _hmt = _hmt || [];
 <p><img src="/images/pasted-4.png" alt="upload successful"></p>
 <h2 id="4、Reactor典型启动过程"><a href="#4、Reactor典型启动过程" class="headerlink" title="4、Reactor典型启动过程"></a>4、Reactor典型启动过程</h2><p>Reator模式的典型启动过程如下：</p>
 <ul>
-<li>(1)创建Reactor</li>
-<li>(2)注册事件处理器（Reactor::register_handler()）</li>
-<li>(3)调用事件多路分发器进入无限事件循环（Reacor:handle_events）</li>
-<li>(4)当操作系统通知某描述符状态就绪时，事件多路分发器找出并调用此描述符注册的事件处理器。</li>
+<li><p>(1)创建Reactor</p>
+</li>
+<li><p>(2)注册事件处理器（Reactor::register_handler()）</p>
+</li>
+<li><p>(3)调用事件多路分发器进入无限事件循环（Reacor:handle_events）</p>
+</li>
+<li><p>(4)当操作系统通知某描述符状态就绪时，事件多路分发器找出并调用此描述符注册的事件处理器。</p>
+</li>
 </ul>
 
         </div>

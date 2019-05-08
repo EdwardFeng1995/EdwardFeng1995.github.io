@@ -17,7 +17,7 @@
 <meta property="og:description" content="对事件处理流程有了高层的认识后,本节将详细介绍 libevent 的核心结构 event,以及libevent 对 event 的管理。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
-<meta property="og:updated_time" content="2019-05-08T08:21:43.349Z">
+<meta property="og:updated_time" content="2019-05-08T08:24:42.727Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="libevent源码剖析(3)--核心event">
 <meta name="twitter:description" content="对事件处理流程有了高层的认识后,本节将详细介绍 libevent 的核心结构 event,以及libevent 对 event 的管理。">
@@ -269,8 +269,8 @@ var _hmt = _hmt || [];
 <p>libevent 有一个全局 event_base 指针 current_base,默认情况下事件 ev将被注册到 current_base 上,使用该函数可以指定不同的 event_base;</p>
 <p>如果一个进程中存在多个 libevent 实例,则必须要调用该函数为 event 设置不同的 event_base;</p>
 <figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment"> * Set's the priority of an event - if an event is already scheduled</span></span><br><span class="line"><span class="hljs-comment"> * changing the priority is going to fail.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">int</span></span><br><span class="line">event_priority_set(struct event *ev, <span class="hljs-keyword">int</span> pri)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_flags &amp; EVLIST_ACTIVE)</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line">	<span class="hljs-keyword">if</span> (pri &lt; <span class="hljs-number">0</span> || pri &gt;= ev-&gt;ev_base-&gt;nactivequeues)</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line"></span><br><span class="line">	ev-&gt;ev_pri = pri;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<pre><code>设置event ev的优先级,没什么可说的,注意的一点就是:当ev正处于就绪状态时,不能设置,返回-1。
-</code></pre><h2 id="4、小结"><a href="#4、小结" class="headerlink" title="4、小结"></a>4、小结</h2><p>本节讲述了libevent的核心event结构,以及libevent支持的事件类型和libevent对event的管理模型;接下来将会描述libevent的事件处理框架,以及其中使用的重要的结构体event_base。</p>
+<p>设置event ev的优先级,没什么可说的,注意的一点就是:当ev正处于就绪状态时,不能设置,返回-1。</p>
+<h2 id="4、小结"><a href="#4、小结" class="headerlink" title="4、小结"></a>4、小结</h2><p>本节讲述了libevent的核心event结构,以及libevent支持的事件类型和libevent对event的管理模型;接下来将会描述libevent的事件处理框架,以及其中使用的重要的结构体event_base。</p>
 <p>—-节选自《libevent 源码深度剖析》 张亮</p>
 
         </div>
