@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<script src="/js/src/click.js"></script>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>libevent源码剖析(6)--集成信号处理 - 愉快的泡泡</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta name="description" content="现在我们已经了解了 libevent 的基本框架:事件管理框架和事件主循环。上节提到了libevent 中 I/O 事件和 Signal 以及 Timer 事件的集成,这一节将分析如何将 Signal 集成到事件主循环的框架中。">
+<meta name="keywords" content="网络编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libevent源码剖析(6)--集成信号处理">
+<meta property="og:url" content="http://yoursite.com/2019/05/09/libevent源码剖析-6-集成信号处理/index.html">
+<meta property="og:site_name" content="愉快的泡泡">
+<meta property="og:description" content="现在我们已经了解了 libevent 的基本框架:事件管理框架和事件主循环。上节提到了libevent 中 I/O 事件和 Signal 以及 Timer 事件的集成,这一节将分析如何将 Signal 集成到事件主循环的框架中。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/images/og_image.png">
+<meta property="og:updated_time" content="2019-05-09T14:21:19.671Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="libevent源码剖析(6)--集成信号处理">
+<meta name="twitter:description" content="现在我们已经了解了 libevent 的基本框架:事件管理框架和事件主循环。上节提到了libevent 中 I/O 事件和 Signal 以及 Timer 事件的集成,这一节将分析如何将 Signal 集成到事件主循环的框架中。">
+<meta name="twitter:image" content="http://yoursite.com/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/images/favicon.svg">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "//hm.baidu.com/hm.js?1aef5bc8ba3740f8fc4e445dfe48d734";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/冯泡泡.png" alt="libevent源码剖析(6)--集成信号处理" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">Home</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-05-09T13:39:00.000Z">2019-05-09</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    13 分钟 读完 (大约 1968 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                libevent源码剖析(6)--集成信号处理
+            
+        </h1>
+        <div class="content">
+            <p><img src="/images/pasted-12.png" alt="upload successful"></p>
+<p>现在我们已经了解了 libevent 的基本框架:事件管理框架和事件主循环。上节提到了libevent 中 I/O 事件和 Signal 以及 Timer 事件的集成,这一节将分析如何将 Signal 集成到事件主循环的框架中。</p>
+<a id="more"></a>
+<h2 id="1、集成策略——使用-socket-pair"><a href="#1、集成策略——使用-socket-pair" class="headerlink" title="1、集成策略——使用 socket pair"></a>1、集成策略——使用 socket pair</h2><p>前一节已经做了足够多的介绍了,基本方法就是采用“消息机制”。在 libevent 中这是通过 <strong>socket pair </strong><br>完成的,下面就来详细分析一下。</p>
+<p>Socket pair 就是一个 socket 对,包含两个 socket,一个读 socket,一个写 socket。工作方式如下图所示:</p>
+<p><img src="/images/pasted-13.png" alt="upload successful"></p>
+<p>创建一个 socket pair 并不是复杂的操作,可以参见下面的流程图,清晰起见,其中忽略了一些错误处理和检查。</p>
+<p><img src="/images/pasted-14.png" alt="upload successful"></p>
+<p>Libevent 提供了辅助函数 evutil_socketpair()来创建一个 socket pair,可以结合上面的创建流程来分析该函数。</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span></span><br><span class="line">evutil_socketpair(<span class="hljs-keyword">int</span> family, <span class="hljs-keyword">int</span> type, <span class="hljs-keyword">int</span> protocol, <span class="hljs-keyword">int</span> fd[<span class="hljs-number">2</span>])</span><br><span class="line">&#123;</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifndef</span> WIN32</span></span><br><span class="line">	<span class="hljs-keyword">return</span> socketpair(family, type, protocol, fd);</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">else</span></span></span><br><span class="line">	<span class="hljs-comment">/* This code is originally from Tor.  Used with permission. */</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* This socketpair does not work when localhost is down. So</span></span><br><span class="line"><span class="hljs-comment">	 * it's really not the same thing at all. But it's close enough</span></span><br><span class="line"><span class="hljs-comment">	 * for now, and really, when localhost is down sometimes, we</span></span><br><span class="line"><span class="hljs-comment">	 * have other problems too.</span></span><br><span class="line"><span class="hljs-comment">	 */</span></span><br><span class="line">	<span class="hljs-keyword">int</span> listener = <span class="hljs-number">-1</span>;</span><br><span class="line">	<span class="hljs-keyword">int</span> connector = <span class="hljs-number">-1</span>;</span><br><span class="line">	<span class="hljs-keyword">int</span> acceptor = <span class="hljs-number">-1</span>;</span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">sockaddr_in</span> <span class="hljs-title">listen_addr</span>;</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">sockaddr_in</span> <span class="hljs-title">connect_addr</span>;</span></span><br><span class="line">	<span class="hljs-keyword">int</span> size;</span><br><span class="line">	<span class="hljs-keyword">int</span> saved_errno = <span class="hljs-number">-1</span>;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (protocol</span><br><span class="line">#ifdef AF_UNIX</span><br><span class="line">		|| family != AF_UNIX</span><br><span class="line">#endif</span><br><span class="line">		) &#123;</span><br><span class="line">		EVUTIL_SET_SOCKET_ERROR(WSAEAFNOSUPPORT);</span><br><span class="line">		<span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="hljs-keyword">if</span> (!fd) &#123;</span><br><span class="line">		EVUTIL_SET_SOCKET_ERROR(WSAEINVAL);</span><br><span class="line">		<span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	listener = socket(AF_INET, type, <span class="hljs-number">0</span>);</span><br><span class="line">	<span class="hljs-keyword">if</span> (listener &lt; <span class="hljs-number">0</span>)</span><br><span class="line">		<span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;</span><br><span class="line">	<span class="hljs-built_in">memset</span>(&amp;listen_addr, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(listen_addr));</span><br><span class="line">	listen_addr.sin_family = AF_INET;</span><br><span class="line">	listen_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);</span><br><span class="line">	listen_addr.sin_port = <span class="hljs-number">0</span>;	<span class="hljs-comment">/* kernel chooses port.	 */</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (bind(listener, (struct sockaddr *) &amp;listen_addr, <span class="hljs-keyword">sizeof</span> (listen_addr))</span><br><span class="line">		== <span class="hljs-number">-1</span>)</span><br><span class="line">		<span class="hljs-keyword">goto</span> tidy_up_and_fail;</span><br><span class="line">	<span class="hljs-keyword">if</span> (listen(listener, <span class="hljs-number">1</span>) == <span class="hljs-number">-1</span>)</span><br><span class="line">		<span class="hljs-keyword">goto</span> tidy_up_and_fail;</span><br><span class="line"></span><br><span class="line">	connector = socket(AF_INET, type, <span class="hljs-number">0</span>);</span><br><span class="line">	<span class="hljs-keyword">if</span> (connector &lt; <span class="hljs-number">0</span>)</span><br><span class="line">		<span class="hljs-keyword">goto</span> tidy_up_and_fail;</span><br><span class="line">	<span class="hljs-comment">/* We want to find out the port number to connect to.  */</span></span><br><span class="line">	size = <span class="hljs-keyword">sizeof</span>(connect_addr);</span><br><span class="line">	<span class="hljs-keyword">if</span> (getsockname(listener, (struct sockaddr *) &amp;connect_addr, &amp;size) == <span class="hljs-number">-1</span>)</span><br><span class="line">		<span class="hljs-keyword">goto</span> tidy_up_and_fail;</span><br><span class="line">	<span class="hljs-keyword">if</span> (size != <span class="hljs-keyword">sizeof</span> (connect_addr))</span><br><span class="line">		<span class="hljs-keyword">goto</span> abort_tidy_up_and_fail;</span><br><span class="line">	<span class="hljs-keyword">if</span> (connect(connector, (struct sockaddr *) &amp;connect_addr,</span><br><span class="line">				<span class="hljs-keyword">sizeof</span>(connect_addr)) == <span class="hljs-number">-1</span>)</span><br><span class="line">		<span class="hljs-keyword">goto</span> tidy_up_and_fail;</span><br><span class="line"></span><br><span class="line">	size = <span class="hljs-keyword">sizeof</span>(listen_addr);</span><br><span class="line">	acceptor = accept(listener, (struct sockaddr *) &amp;listen_addr, &amp;size);</span><br><span class="line">	<span class="hljs-keyword">if</span> (acceptor &lt; <span class="hljs-number">0</span>)</span><br><span class="line">		<span class="hljs-keyword">goto</span> tidy_up_and_fail;</span><br><span class="line">	<span class="hljs-keyword">if</span> (size != <span class="hljs-keyword">sizeof</span>(listen_addr))</span><br><span class="line">		<span class="hljs-keyword">goto</span> abort_tidy_up_and_fail;</span><br><span class="line">	EVUTIL_CLOSESOCKET(listener);</span><br><span class="line">	<span class="hljs-comment">/* Now check we are talking to ourself by matching port and host on the</span></span><br><span class="line"><span class="hljs-comment">	   two sockets.	 */</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (getsockname(connector, (struct sockaddr *) &amp;connect_addr, &amp;size) == <span class="hljs-number">-1</span>)</span><br><span class="line">		<span class="hljs-keyword">goto</span> tidy_up_and_fail;</span><br><span class="line">	<span class="hljs-keyword">if</span> (size != <span class="hljs-keyword">sizeof</span> (connect_addr)</span><br><span class="line">		|| listen_addr.sin_family != connect_addr.sin_family</span><br><span class="line">		|| listen_addr.sin_addr.s_addr != connect_addr.sin_addr.s_addr</span><br><span class="line">		|| listen_addr.sin_port != connect_addr.sin_port)</span><br><span class="line">		<span class="hljs-keyword">goto</span> abort_tidy_up_and_fail;</span><br><span class="line">	fd[<span class="hljs-number">0</span>] = connector;</span><br><span class="line">	fd[<span class="hljs-number">1</span>] = acceptor;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;</span><br><span class="line"></span><br><span class="line"> abort_tidy_up_and_fail:</span><br><span class="line">	saved_errno = WSAECONNABORTED;</span><br><span class="line"> tidy_up_and_fail:</span><br><span class="line">	<span class="hljs-keyword">if</span> (saved_errno &lt; <span class="hljs-number">0</span>)</span><br><span class="line">		saved_errno = WSAGetLastError();</span><br><span class="line">	<span class="hljs-keyword">if</span> (listener != <span class="hljs-number">-1</span>)</span><br><span class="line">		EVUTIL_CLOSESOCKET(listener);</span><br><span class="line">	<span class="hljs-keyword">if</span> (connector != <span class="hljs-number">-1</span>)</span><br><span class="line">		EVUTIL_CLOSESOCKET(connector);</span><br><span class="line">	<span class="hljs-keyword">if</span> (acceptor != <span class="hljs-number">-1</span>)</span><br><span class="line">		EVUTIL_CLOSESOCKET(acceptor);</span><br><span class="line"></span><br><span class="line">	EVUTIL_SET_SOCKET_ERROR(saved_errno);</span><br><span class="line">	<span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="2、集成到事件主循环——通知-event-base"><a href="#2、集成到事件主循环——通知-event-base" class="headerlink" title="2、集成到事件主循环——通知 event_base"></a>2、集成到事件主循环——通知 event_base</h2><p>Socket pair 创建好了,可是 libevent 的事件主循环还是不知道 Signal 是否发生了啊,看来我们还差了最后一步,那就是:<strong>为 socket pair 的读 socket 在 libevent 的 event_base 实例上注册一个 persist 的读事件。</strong></p>
+<p>这样当向写 socket 写入数据时,读 socket 就会得到通知,触发读事件,从而 event_base就能相应的得到通知了。</p>
+<p>前面提到过,Libevent 会在事件主循环中检查标记,来确定是否有触发的 signal,如果标记被设置就处理这些 signal,这段代码在各个具体的 I/O 机制中,以 Epoll 为例,在epoll_dispatch()函数中,代码片段如下:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">res = epoll_wait(epollop-&gt;epfd, events, epollop-&gt;nevents, timeout);   <span class="hljs-comment">//监听事件发生</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (res == <span class="hljs-number">-1</span>) &#123;</span><br><span class="line">		<span class="hljs-keyword">if</span> (errno != EINTR) &#123;</span><br><span class="line">			event_warn(<span class="hljs-string">"epoll_wait"</span>);</span><br><span class="line">			<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		evsignal_process(base);    <span class="hljs-comment">//由于Signal事件发生中断，处理Signal事件</span></span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">	&#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (base-&gt;sig.evsignal_caught) &#123;</span><br><span class="line">		evsignal_process(base);    <span class="hljs-comment">//有Signal事件发生，处理Signal事件</span></span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>完整的处理框架如下所示:</p>
+<p><img src="/images/pasted-15.png" alt="upload successful"></p>
+<ul>
+<li>注 1:libevent 中,初始化阶段并不注册读 socket 的读事件,而是在注册信号阶段才会测试并注册;</li>
+<li>注 2:libevent 中,检查 I/O 事件是在各系统 I/O 机制的 dispatch()函数中完成的,该 dispatch()函数在event_base_loop()函数中被调用;</li>
+</ul>
+<h2 id="3、evsignal-info-结构体"><a href="#3、evsignal-info-结构体" class="headerlink" title="3、evsignal_info 结构体"></a>3、evsignal_info 结构体</h2><p>Libevent 中 Signal 事件的管理是通过结构体 evsignal_info 完成的,结构体位于 evsignal.h文件中，定义如下:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">evsignal_info</span> &#123;</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event</span> <span class="hljs-title">ev_signal</span>;</span></span><br><span class="line">	<span class="hljs-keyword">int</span> ev_signal_pair[<span class="hljs-number">2</span>];</span><br><span class="line">	<span class="hljs-keyword">int</span> ev_signal_added;</span><br><span class="line">	<span class="hljs-keyword">volatile</span> <span class="hljs-keyword">sig_atomic_t</span> evsignal_caught;</span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_list</span> <span class="hljs-title">evsigevents</span>[<span class="hljs-title">NSIG</span>];</span></span><br><span class="line">	<span class="hljs-keyword">sig_atomic_t</span> evsigcaught[NSIG];</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_SIGACTION</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">sigaction</span> **<span class="hljs-title">sh_old</span>;</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">else</span></span></span><br><span class="line">	<span class="hljs-keyword">ev_sighandler_t</span> **sh_old;</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line">	<span class="hljs-keyword">int</span> sh_old_max;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>下面详细介绍一下个字段的含义和作用:</p>
+<ul>
+<li><p>1)<strong>ev_signal</strong></p>
+<p>为 socket pair 的读 socket 向 event_base 注册读事件时使用的 event 结构体;</p>
+</li>
+<li><p>2)<strong>ev_signal_pair</strong></p>
+<p>socket pair 对,作用见第一节的介绍;</p>
+</li>
+<li><p>3)<strong>ev_signal_added</strong></p>
+<p>记录 ev_signal 事件是否已经注册了;</p>
+</li>
+<li><p>4)<strong>evsignal_caught</strong></p>
+<p>是否有信号发生的标记;是 volatile 类型,因为它会在另外的线程中被修改;</p>
+</li>
+<li><p>5)<strong>evsigvents[NSIG]</strong></p>
+<p>数组,evsigevents[signo]表示注册到信号 signo 的事件链表;</p>
+</li>
+<li><p>6)<strong>evsigcaught[NSIG]</strong></p>
+<p>具体记录每个信号触发的次数,evsigcaught[signo]是记录信号 signo被触发的次数;</p>
+</li>
+<li><p>7)<strong>sh_old</strong></p>
+<p>记录了原来的 signal 处理函数指针,当信号 signo 注册的 event 被清空时,需要重新设置其处理函数;</p>
+</li>
+</ul>
+<p>evsignal_info 的初始化包括，创建 socket pair，设置 ev_signal 事件(但并没有注册,而是等到有信号注册时才检查并注册)，并将所有标记置零，初始化信号的注册事件链表指针等。</p>
+<h2 id="4、注册、注销-signal-事件"><a href="#4、注册、注销-signal-事件" class="headerlink" title="4、注册、注销 signal 事件"></a>4、注册、注销 signal 事件</h2><p>注册 signal 事件是通过 <strong>evsignal_add(struct event *ev)</strong> 函数完成的。</p>
+<p>libevent 对所有的信号注册同一个处理函数 <strong>evsignal_handler()</strong>，该函数将在下一段介绍，注册过程如下：</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span></span><br><span class="line">evsignal_add(struct event *ev)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-keyword">int</span> evsignal;</span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_base</span> *<span class="hljs-title">base</span> = <span class="hljs-title">ev</span>-&gt;<span class="hljs-title">ev_base</span>;</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">evsignal_info</span> *<span class="hljs-title">sig</span> = &amp;<span class="hljs-title">ev</span>-&gt;<span class="hljs-title">ev_base</span>-&gt;<span class="hljs-title">sig</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_events &amp; (EV_READ|EV_WRITE))</span><br><span class="line">		event_errx(<span class="hljs-number">1</span>, <span class="hljs-string">"%s: EV_SIGNAL incompatible use"</span>, __func__);</span><br><span class="line"></span><br><span class="line">	evsignal = EVENT_SIGNAL(ev);   <span class="hljs-comment">//取得 ev 要注册到的信号 signo</span></span><br><span class="line">	assert(evsignal &gt;= <span class="hljs-number">0</span> &amp;&amp; evsignal &lt; NSIG);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//如果信号 signo 未被注册</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (TAILQ_EMPTY(&amp;sig-&gt;evsigevents[evsignal])) &#123;</span><br><span class="line">		event_debug((<span class="hljs-string">"%s: %p: changing signal handler"</span>, __func__, ev));</span><br><span class="line">		<span class="hljs-comment">//为 signo 注册信号处理函数 evsignal_handler();</span></span><br><span class="line">		<span class="hljs-keyword">if</span> (_evsignal_set_handler(</span><br><span class="line">			    base, evsignal, evsignal_handler) == <span class="hljs-number">-1</span>)</span><br><span class="line">			<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line"></span><br><span class="line">		<span class="hljs-comment">/* catch signals if they happen quickly */</span></span><br><span class="line">		evsignal_base = base;</span><br><span class="line"></span><br><span class="line">		<span class="hljs-comment">//如果事件 ev_signal 还没哟注册,就注册 ev_signal 事件</span></span><br><span class="line">		<span class="hljs-keyword">if</span> (!sig-&gt;ev_signal_added) &#123;</span><br><span class="line">			<span class="hljs-keyword">if</span> (event_add(&amp;sig-&gt;ev_signal, <span class="hljs-literal">NULL</span>))</span><br><span class="line">				<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line">			sig-&gt;ev_signal_added = <span class="hljs-number">1</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* multiple events may listen to the same signal */</span></span><br><span class="line">	<span class="hljs-comment">//将事件 ev 添加到 signo 的 event 链表中;</span></span><br><span class="line">	TAILQ_INSERT_TAIL(&amp;sig-&gt;evsigevents[evsignal], ev, ev_signal_next);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>evsignal_add(struct event *ev)函数如下：</p>
+<ul>
+<li><p>1 取得 ev 要注册到的信号 signo;</p>
+</li>
+<li><p>2 如果信号 signo 未被注册,那么就为 signo 注册信号处理函数 evsignal_handler();</p>
+</li>
+<li><p>3 如果事件 ev_signal 还没哟注册,就注册 ev_signal 事件;</p>
+</li>
+<li><p>4 将事件 ev 添加到 signo 的 event 链表中;</p>
+</li>
+</ul>
+<p>从 signo 上注销一个已注册的 signal 事件就更简单了,直接从其已注册事件的链表中移除即可。如果事件链表已空,那么就恢复旧的处理函数;</p>
+<p>下面的讲解都以 signal()函数为例,sigaction()函数的处理和 signal()相似。</p>
+<p>处理函数evsignal_handler()函数做的事情很简单,就是记录信号的发生次数,并通知event_base有信号触发,需要处理:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span></span><br><span class="line">evsignal_handler(<span class="hljs-keyword">int</span> sig)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-keyword">int</span> save_errno = errno;   <span class="hljs-comment">//不覆盖原来的错误代码</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (evsignal_base == <span class="hljs-literal">NULL</span>) &#123;</span><br><span class="line">		event_warn(</span><br><span class="line">			<span class="hljs-string">"%s: received signal %d, but have no base configured"</span>,</span><br><span class="line">			__func__, sig);</span><br><span class="line">		<span class="hljs-keyword">return</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">// 记录信号sig的触发次数,并设置event触发标记</span></span><br><span class="line">	evsignal_base-&gt;sig.evsigcaught[sig]++;</span><br><span class="line">	evsignal_base-&gt;sig.evsignal_caught = <span class="hljs-number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifndef</span> HAVE_SIGACTION</span></span><br><span class="line">	signal(sig, evsignal_handler);  <span class="hljs-comment">//重新注册信号</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* Wake up our notification mechanism */</span></span><br><span class="line">	<span class="hljs-comment">// 向写socket写一个字节数据,触发event_base的I/O事件,从而通知其有信号触发,需要处理</span></span><br><span class="line">	send(evsignal_base-&gt;sig.ev_signal_pair[<span class="hljs-number">0</span>], <span class="hljs-string">"a"</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>);</span><br><span class="line">	errno = save_errno;   <span class="hljs-comment">//错误代码</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="4、小结"><a href="#4、小结" class="headerlink" title="4、小结"></a>4、小结</h2><p>本节介绍了 libevent 对 signal 事件的具体处理框架,包括事件注册、删除和 socket pair通知机制,以及是如何将 Signal 事件集成到事件主循环之中的。</p>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/网络编程/">网络编程</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipay.jpg" alt="支付宝"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/05/09/libevent源码剖析-5-事件主循环/">
+                <span class="level-item">libevent源码剖析(5)--事件主循环</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="lv-container" data-id="city" data-uid="MTAyMC80NDEzMi8yMDY2Nw==">
+    <script type="text/javascript">
+        (function(d, s) {
+            var j, e = d.getElementsByTagName(s)[0];
+
+            if (typeof LivereTower === 'function') { return; }
+
+            j = d.createElement(s);
+            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+            j.async = true;
+
+            e.parentNode.insertBefore(j, e);
+        })(document, 'script');
+    </script>
+    <noscript> Please activate JavaScript for write a comment in LiveRe</noscript>
+</div>
+
+    </div>
+</div>
+</div>
+                
+
+<!-- 粘贴的部分 -->
+                          <!-- 修改，可选保留的栏 -->
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/头像.png" alt="冯泡泡">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        冯泡泡
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        快乐地撸撸代码，安静地品品生活
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>China,Chengdu</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        10
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        2
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        1
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/EdwardFeng1995" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/EdwardFeng1995">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Facebook" href="https://facebook.com">
+                
+                <i class="fab fa-facebook"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Twitter" href="https://twitter.com">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://dribbble.com">
+                
+                <i class="fab fa-dribbble"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="https://hexo.io" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">Hexo</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">hexo.io</span>
+                    </span>
+                </a>
+            </li>
+        
+            <li>
+                <a class="level is-mobile" href="https://github.com/ppoffice" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">PPOffice</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">github.com</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/C-心得/">
+            <span class="level-start">
+                <span class="level-item">C++心得</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Linux/">
+            <span class="level-start">
+                <span class="level-item">Linux</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">7</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            标签云
+        </h3>
+        <a href="/tags/网络编程/" style="font-size: 10px;">网络编程</a>
+    </div>
+</div>
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen is-sticky">
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            
+            <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(6)--集成信号处理">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-09T13:39:00.000Z">2019-05-09</time></div>
+                    <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="has-link-black-ter is-size-6">libevent源码剖析(6)--集成信号处理</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(5)--事件主循环">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-09T01:48:00.000Z">2019-05-09</time></div>
+                    <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="has-link-black-ter is-size-6">libevent源码剖析(5)--事件主循环</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(4)--事件处理框架">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-08T09:11:00.000Z">2019-05-08</time></div>
+                    <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="has-link-black-ter is-size-6">libevent源码剖析(4)--事件处理框架</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(3)--核心event">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-08T07:28:00.000Z">2019-05-08</time></div>
+                    <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="has-link-black-ter is-size-6">libevent源码剖析(3)--核心event</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/07/libevent源码剖析-Reactor模式/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(2)--Reactor模式">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-07T13:30:00.000Z">2019-05-07</time></div>
+                    <a href="/2019/05/07/libevent源码剖析-Reactor模式/" class="has-link-black-ter is-size-6">libevent源码剖析(2)--Reactor模式</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/网络编程/">
+                        <span class="tag">网络编程</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+
+                
+
+<!-- 粘贴的部分 -->
+
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/冯泡泡.png" alt="libevent源码剖析(6)--集成信号处理" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2019 冯泡泡&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+<div align="center">
+<span id="busuanzi_container_site_pv">
+    &nbsp;&nbsp;&#10052;&nbsp;&nbsp;访问量：<span id="busuanzi_value_site_pv"></span>
+</span>
+
+<span id="busuanzi_container_site_uv">
+  &nbsp;&nbsp;&#10052;&nbsp;&nbsp;访客数：<span id="busuanzi_value_site_uv"></span>
+</span>
+
+<br>
+	
+	<span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>
+            <script>
+                var now = new Date(); 
+                function createtime() { 
+                    var grt= new Date("3/1/2019 12:00:00");//此处修改你的建站时间或者网站上线时间 
+                    now.setTime(now.getTime()+250); 
+                    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days); 
+                    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours); 
+                    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum); 
+                    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;} 
+                    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum); 
+                    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;} 
+                    document.getElementById("timeDate").innerHTML = "Security Run For "+dnum+" 天 "; 
+                    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒"; 
+                } 
+            setInterval("createtime()",250);
+</script>
+</div></footer>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+
+    <!-- 雪花特效 -->
+    <script type="text/javascript">
+      var windowWidth = $(window).width();
+      if (windowWidth > 480) {
+        document.write('<script type="text/javascript" src="/js/src/snow.js"><\/script>');
+      }
+    </script>
+
+</body>
+</html>
