@@ -186,7 +186,7 @@ var _hmt = _hmt || [];
 <p>对事件处理流程有了高层的认识后,本节将详细介绍 libevent 的核心结构 event,以及libevent 对 event 的管理。</p>
 <a id="more"></a>
 <h2 id="1、libevent的核心-event"><a href="#1、libevent的核心-event" class="headerlink" title="1、libevent的核心-event"></a>1、libevent的核心-event</h2><p>Libevent 是基于事件驱动(event-driven)的,从名字也可以看到 event 是整个库的核心。<br>event 就是 Reactor 框架中的事件处理程序组件;它提供了函数接口,供 Reactor 在事件发生<br>时调用,以执行相应的事件处理,通常它会绑定一个有效的句柄。<br>首先给出 event 结构体的声明,它位于 event.h 文件中:</p>
-<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event</span> &#123;</span></span><br><span class="line">	TAILQ_ENTRY (event) ev_next;</span><br><span class="line">	TAILQ_ENTRY (event) ev_active_next;</span><br><span class="line">	TAILQ_ENTRY (event) ev_signal_next;</span><br><span class="line">	<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> min_heap_idx;	<span class="hljs-comment">/* for managing timeouts */</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event_base</span> *<span class="hljs-title">ev_base</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">int</span> ev_fd;</span><br><span class="line">	<span class="hljs-keyword">short</span> ev_events;</span><br><span class="line">	<span class="hljs-keyword">short</span> ev_ncalls;</span><br><span class="line">	<span class="hljs-keyword">short</span> *ev_pncalls;	<span class="hljs-comment">/* Allows deletes in callback */</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timeval</span> <span class="hljs-title">ev_timeout</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">int</span> ev_pri;		<span class="hljs-comment">/* smaller numbers are higher priority */</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">void</span> (*ev_callback)(<span class="hljs-keyword">int</span>, <span class="hljs-keyword">short</span>, <span class="hljs-keyword">void</span> *arg);</span><br><span class="line">	<span class="hljs-keyword">void</span> *ev_arg;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">int</span> ev_res;		<span class="hljs-comment">/* result passed to event callback */</span></span><br><span class="line">	<span class="hljs-keyword">int</span> ev_flags;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">event</span> &#123;</span></span><br><span class="line">	TAILQ_ENTRY (event) ev_next;</span><br><span class="line">	TAILQ_ENTRY (event) ev_active_next;</span><br><span class="line">	TAILQ_ENTRY (event) ev_signal_next;</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">int</span> min_heap_idx;	<span class="comment">/* for managing timeouts */</span></span><br><span class="line"></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">event_base</span> *<span class="title">ev_base</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">int</span> ev_fd;</span><br><span class="line">	<span class="keyword">short</span> ev_events;</span><br><span class="line">	<span class="keyword">short</span> ev_ncalls;</span><br><span class="line">	<span class="keyword">short</span> *ev_pncalls;	<span class="comment">/* Allows deletes in callback */</span></span><br><span class="line"></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">ev_timeout</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">int</span> ev_pri;		<span class="comment">/* smaller numbers are higher priority */</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">void</span> (*ev_callback)(<span class="keyword">int</span>, <span class="keyword">short</span>, <span class="keyword">void</span> *arg);</span><br><span class="line">	<span class="keyword">void</span> *ev_arg;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">int</span> ev_res;		<span class="comment">/* result passed to event callback */</span></span><br><span class="line">	<span class="keyword">int</span> ev_flags;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 <p>下面详细解释一下结构体中各字段的含义。</p>
 <ul>
 <li><p>1)<strong>ev_events</strong>: </p>
@@ -196,7 +196,7 @@ var _hmt = _hmt || [];
 <p>信号：EV_SIGNAL</p>
 <p>辅助选项:EV_PERSIST,表明是一个永久事件</p>
 <p>libevent中的定义为：</p>
-<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EV_TIMEOUT	0x01</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EV_READ		0x02</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EV_WRITE	0x04</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EV_SIGNAL	0x08</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EV_PERSIST	0x10	<span class="hljs-comment">/* Persistant event */</span></span></span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EV_TIMEOUT	0x01</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EV_READ		0x02</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EV_WRITE	0x04</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EV_SIGNAL	0x08</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EV_PERSIST	0x10	<span class="comment">/* Persistant event */</span></span></span><br></pre></td></tr></table></figure>
 <p>可以看出事件类型可以使用“|”运算符进行组合,需要说明的是,信号和I/O事件不能同时设置;还可以看出libevent使用event结构体将这3种事件的处理统一起来;</p>
 </li>
 <li><p>2)<strong>ev_next,ev_active_next 和 ev_signal_next</strong> 都是双向链表节点指针;它们是 libevent 对不同事件类型和在不同的时期,对事件的管理时使用到的字段。</p>
@@ -215,14 +215,14 @@ var _hmt = _hmt || [];
 </li>
 <li><p>5)<strong>ev_callback</strong></p>
 <p>event 的回调函数,被 ev_base 调用,执行事件处理程序,这是一个函数指<br>针,原型为:</p>
-<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">void</span> (*ev_callback)(<span class="hljs-keyword">int</span> fd, <span class="hljs-keyword">short</span> events, <span class="hljs-keyword">void</span> *arg)</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> (*ev_callback)(<span class="keyword">int</span> fd, <span class="keyword">short</span> events, <span class="keyword">void</span> *arg)</span><br></pre></td></tr></table></figure>
 <p>其中参数 fd 对应于 ev_fd；events 对应于 ev_events；arg 对应于 ev_arg；</p>
 </li>
 <li><p>6)<strong>ev_arg:</strong></p>
 <p>void* 表明可以是任意类型的数据,在设置 event 时指定;</p>
 </li>
 <li><p>7)<strong>eb_flags:</strong>libevent 用于标记 event 信息的字段,表明其当前的状态,可能的值有:</p>
-<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EVLIST_TIMEOUT	0x01 <span class="hljs-comment">//event在time堆中</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EVLIST_INSERTED	0x02 <span class="hljs-comment">//event在已注册事件链表中</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EVLIST_SIGNAL	0x04	 <span class="hljs-comment">//未见使用</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EVLIST_ACTIVE	0x08	 <span class="hljs-comment">//event在激活链表中</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EVLIST_INTERNAL	0x10 <span class="hljs-comment">//内部使用标记</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> EVLIST_INIT	0x80     <span class="hljs-comment">//event已被初始化</span></span></span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVLIST_TIMEOUT	0x01 <span class="comment">//event在time堆中</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVLIST_INSERTED	0x02 <span class="comment">//event在已注册事件链表中</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVLIST_SIGNAL	0x04	 <span class="comment">//未见使用</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVLIST_ACTIVE	0x08	 <span class="comment">//event在激活链表中</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVLIST_INTERNAL	0x10 <span class="comment">//内部使用标记</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVLIST_INIT	0x80     <span class="comment">//event已被初始化</span></span></span><br></pre></td></tr></table></figure>
 </li>
 <li><p>8)<strong>ev_ncalls:</strong><br>事件就绪执行时,调用 ev_callback 的次数,通常为 1;</p>
 </li>
@@ -236,7 +236,7 @@ var _hmt = _hmt || [];
 <p>每次当有事件 event 转变为就绪状态时, libevent 就会把它移入到 active event list[priority]<br>中,其中 priority 是 event 的优先级;</p>
 <p>接着 libevent 会根据自己的调度策略选择就绪事件,调用其 cb_callback()函数执行事件处理;并根据就绪的句柄和事件类型填充 cb_callback 函数的参数。</p>
 <h2 id="3、事件设置的接口函数"><a href="#3、事件设置的接口函数" class="headerlink" title="3、事件设置的接口函数"></a>3、事件设置的接口函数</h2><p>要向 libevent 添加一个事件,需要首先设置 event 对象,这通过调用 libevent 提供的函数有:<strong>event_set(), event_base_set(), event_priority_set()</strong> 来完成；下面分别进行讲解。</p>
-<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">void</span></span><br><span class="line">event_set(struct event *ev, <span class="hljs-keyword">int</span> fd, <span class="hljs-keyword">short</span> events,</span><br><span class="line">	  <span class="hljs-keyword">void</span> (*callback)(<span class="hljs-keyword">int</span>, <span class="hljs-keyword">short</span>, <span class="hljs-keyword">void</span> *), <span class="hljs-keyword">void</span> *arg)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-comment">/* Take the current base - caller needs to set the real base later */</span></span><br><span class="line">	ev-&gt;ev_base = current_base;</span><br><span class="line"></span><br><span class="line">	ev-&gt;ev_callback = callback;</span><br><span class="line">	ev-&gt;ev_arg = arg;</span><br><span class="line">	ev-&gt;ev_fd = fd;</span><br><span class="line">	ev-&gt;ev_events = events;</span><br><span class="line">	ev-&gt;ev_res = <span class="hljs-number">0</span>;</span><br><span class="line">	ev-&gt;ev_flags = EVLIST_INIT;</span><br><span class="line">	ev-&gt;ev_ncalls = <span class="hljs-number">0</span>;</span><br><span class="line">	ev-&gt;ev_pncalls = <span class="hljs-literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">	min_heap_elem_init(ev);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* by default, we put new events into the middle priority */</span></span><br><span class="line">	<span class="hljs-keyword">if</span>(current_base)</span><br><span class="line">		ev-&gt;ev_pri = current_base-&gt;nactivequeues/<span class="hljs-number">2</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">event_set(struct event *ev, <span class="keyword">int</span> fd, <span class="keyword">short</span> events,</span><br><span class="line">	  <span class="keyword">void</span> (*callback)(<span class="keyword">int</span>, <span class="keyword">short</span>, <span class="keyword">void</span> *), <span class="keyword">void</span> *arg)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">/* Take the current base - caller needs to set the real base later */</span></span><br><span class="line">	ev-&gt;ev_base = current_base;</span><br><span class="line"></span><br><span class="line">	ev-&gt;ev_callback = callback;</span><br><span class="line">	ev-&gt;ev_arg = arg;</span><br><span class="line">	ev-&gt;ev_fd = fd;</span><br><span class="line">	ev-&gt;ev_events = events;</span><br><span class="line">	ev-&gt;ev_res = <span class="number">0</span>;</span><br><span class="line">	ev-&gt;ev_flags = EVLIST_INIT;</span><br><span class="line">	ev-&gt;ev_ncalls = <span class="number">0</span>;</span><br><span class="line">	ev-&gt;ev_pncalls = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">	min_heap_elem_init(ev);</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* by default, we put new events into the middle priority */</span></span><br><span class="line">	<span class="keyword">if</span>(current_base)</span><br><span class="line">		ev-&gt;ev_pri = current_base-&gt;nactivequeues/<span class="number">2</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <ul>
 <li><p>设置事件 ev 绑定的文件描述符或者信号,对于定时事件,设为-1 即可;</p>
 </li>
@@ -247,11 +247,11 @@ var _hmt = _hmt || [];
 <li><p>初始化其它字段,比如缺省的 event_base 和优先级;</p>
 </li>
 </ul>
-<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span></span><br><span class="line">event_base_set(struct event_base *base, struct event *ev)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-comment">/* Only innocent events may be assigned to a different base */</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_flags != EVLIST_INIT)</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line"></span><br><span class="line">	ev-&gt;ev_base = base;</span><br><span class="line">	ev-&gt;ev_pri = base-&gt;nactivequeues/<span class="hljs-number">2</span>;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span></span><br><span class="line">event_base_set(struct event_base *base, struct event *ev)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">/* Only innocent events may be assigned to a different base */</span></span><br><span class="line">	<span class="keyword">if</span> (ev-&gt;ev_flags != EVLIST_INIT)</span><br><span class="line">		<span class="keyword">return</span> (<span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line">	ev-&gt;ev_base = base;</span><br><span class="line">	ev-&gt;ev_pri = base-&gt;nactivequeues/<span class="number">2</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> (<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>设置 event ev 将要注册到的 event_base;</p>
 <p>libevent 有一个全局 event_base 指针 current_base,默认情况下事件 ev将被注册到 current_base 上,使用该函数可以指定不同的 event_base;</p>
 <p>如果一个进程中存在多个 libevent 实例,则必须要调用该函数为 event 设置不同的 event_base;</p>
-<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment"> * Set's the priority of an event - if an event is already scheduled</span></span><br><span class="line"><span class="hljs-comment"> * changing the priority is going to fail.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">int</span></span><br><span class="line">event_priority_set(struct event *ev, <span class="hljs-keyword">int</span> pri)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-keyword">if</span> (ev-&gt;ev_flags &amp; EVLIST_ACTIVE)</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line">	<span class="hljs-keyword">if</span> (pri &lt; <span class="hljs-number">0</span> || pri &gt;= ev-&gt;ev_base-&gt;nactivequeues)</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line"></span><br><span class="line">	ev-&gt;ev_pri = pri;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Set's the priority of an event - if an event is already scheduled</span></span><br><span class="line"><span class="comment"> * changing the priority is going to fail.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span></span><br><span class="line">event_priority_set(struct event *ev, <span class="keyword">int</span> pri)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">if</span> (ev-&gt;ev_flags &amp; EVLIST_ACTIVE)</span><br><span class="line">		<span class="keyword">return</span> (<span class="number">-1</span>);</span><br><span class="line">	<span class="keyword">if</span> (pri &lt; <span class="number">0</span> || pri &gt;= ev-&gt;ev_base-&gt;nactivequeues)</span><br><span class="line">		<span class="keyword">return</span> (<span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line">	ev-&gt;ev_pri = pri;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> (<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>设置event ev的优先级,没什么可说的,注意的一点就是:当ev正处于就绪状态时,不能设置,返回-1。</p>
 <h2 id="4、小结"><a href="#4、小结" class="headerlink" title="4、小结"></a>4、小结</h2><p>本节讲述了libevent的核心event结构,以及libevent支持的事件类型和libevent对event的管理模型;接下来将会描述libevent的事件处理框架,以及其中使用的重要的结构体event_base。</p>
 <p>—-节选自《libevent 源码深度剖析》 张亮</p>
@@ -391,7 +391,7 @@ var _hmt = _hmt || [];
                         文章
                     </p>
                     <p class="title has-text-weight-normal">
-                        8
+                        9
                     </p>
                 </div>
             </div>
@@ -522,7 +522,7 @@ var _hmt = _hmt || [];
                 <span class="level-item">Linux</span>
             </span>
             <span class="level-end">
-                <span class="level-item tag">5</span>
+                <span class="level-item tag">6</span>
             </span>
         </a></li>
             </ul>
@@ -550,6 +550,25 @@ var _hmt = _hmt || [];
         <h3 class="menu-label">
             最新文章
         </h3>
+        
+        <article class="media">
+            
+            <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(5)--事件主循环">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-09T01:48:00.000Z">2019-05-09</time></div>
+                    <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="has-link-black-ter is-size-6">libevent源码剖析(5)--事件主循环</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
         
         <article class="media">
             
@@ -627,25 +646,6 @@ var _hmt = _hmt || [];
             </div>
         </article>
         
-        <article class="media">
-            
-            <a href="/2019/04/26/epoll反应堆模型/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="epoll反应堆模型">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-04-26T14:01:00.000Z">2019-04-26</time></div>
-                    <a href="/2019/04/26/epoll反应堆模型/" class="has-link-black-ter is-size-6">epoll反应堆模型</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
     </div>
 </div>
 
@@ -664,7 +664,7 @@ var _hmt = _hmt || [];
                     <span class="level-item">五月 2019</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">4</span>
+                    <span class="level-item tag">5</span>
                 </span>
             </a>
         </li>
@@ -707,7 +707,7 @@ var _hmt = _hmt || [];
                 <div class="control">
                     <a class="tags has-addons" href="/tags/网络编程/">
                         <span class="tag">网络编程</span>
-                        <span class="tag is-grey">5</span>
+                        <span class="tag is-grey">6</span>
                     </a>
                 </div>
                 
