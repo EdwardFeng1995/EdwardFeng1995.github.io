@@ -3,22 +3,24 @@
 <html lang="zh">
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-<title>归档 - 愉快的泡泡</title>
+<title>libevent源码剖析(8)--支持I/O多路复用 - 愉快的泡泡</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
 
 
-    <meta name="description" content="个人学习心得，随笔">
-<meta property="og:type" content="website">
-<meta property="og:title" content="愉快的泡泡">
-<meta property="og:url" content="http://yoursite.com/archives/index.html">
+    <meta name="description" content="Libevent 的核心是事件驱动、同步非阻塞,为了达到这一目标,必须采用系统提供的 I/O多路复用技术,而这些在Windows、Linux、Unix 等不同平台上却各有不同,如何能提供优雅而统一的支持方式,是首要关键的问题,这其实不难,本节就来分析一下。">
+<meta name="keywords" content="网络编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libevent源码剖析(8)--支持I&#x2F;O多路复用">
+<meta property="og:url" content="http://yoursite.com/2019/05/10/libevent源码剖析-8-支持I-O多路复用/index.html">
 <meta property="og:site_name" content="愉快的泡泡">
-<meta property="og:description" content="个人学习心得，随笔">
+<meta property="og:description" content="Libevent 的核心是事件驱动、同步非阻塞,为了达到这一目标,必须采用系统提供的 I/O多路复用技术,而这些在Windows、Linux、Unix 等不同平台上却各有不同,如何能提供优雅而统一的支持方式,是首要关键的问题,这其实不难,本节就来分析一下。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
+<meta property="og:updated_time" content="2019-05-10T06:46:13.286Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="愉快的泡泡">
-<meta name="twitter:description" content="个人学习心得，随笔">
+<meta name="twitter:title" content="libevent源码剖析(8)--支持I&#x2F;O多路复用">
+<meta name="twitter:description" content="Libevent 的核心是事件驱动、同步非阻塞,为了达到这一目标,必须采用系统提供的 I/O多路复用技术,而这些在Windows、Linux、Unix 等不同平台上却各有不同,如何能提供优雅而统一的支持方式,是首要关键的问题,这其实不难,本节就来分析一下。">
 <meta name="twitter:image" content="http://yoursite.com/images/og_image.png">
 
 
@@ -103,7 +105,7 @@ var _hmt = _hmt || [];
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/冯泡泡.png" alt="愉快的泡泡" height="28">
+                <img src="/images/冯泡泡.png" alt="libevent源码剖析(8)--支持I/O多路复用" height="28">
             
             </a>
         </div>
@@ -113,7 +115,7 @@ var _hmt = _hmt || [];
                 
                 <a class="navbar-item" href="/">Home</a>
                 
-                <a class="navbar-item is-active" href="/archives">Archives</a>
+                <a class="navbar-item" href="/archives">Archives</a>
                 
                 <a class="navbar-item" href="/categories">Categories</a>
                 
@@ -151,236 +153,142 @@ var _hmt = _hmt || [];
     <section class="section">
         <div class="container">
             <div class="columns">
-                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
         
-<div class="card widget">
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-05-10T02:23:00.000Z">2019-05-10</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    6 分钟 读完 (大约 943 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                libevent源码剖析(8)--支持I/O多路复用
+            
+        </h1>
+        <div class="content">
+            <p>Libevent 的核心是事件驱动、同步非阻塞,为了达到这一目标,必须采用系统提供的 I/O多路复用技术,而这些在Windows、Linux、Unix 等不同平台上却各有不同,如何能提供优雅而统一的支持方式,是首要关键的问题,这其实不难,本节就来分析一下。</p>
+<a id="more"></a>
+<h2 id="1、统一的关键"><a href="#1、统一的关键" class="headerlink" title="1、统一的关键"></a>1、统一的关键</h2><p>Libevent支持多种I/O多路复用技术的关键就在于结构体eventop,这个结构体前面也曾提到过,它的成员是一系列的函数指针, 定义在event-internal.h文件中:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">eventop</span> &#123;</span></span><br><span class="line">	<span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> *name;</span><br><span class="line">	<span class="hljs-keyword">void</span> *(*init)(struct event_base *);    <span class="hljs-comment">//初始化</span></span><br><span class="line">	<span class="hljs-keyword">int</span> (*add)(<span class="hljs-keyword">void</span> *, struct event *);    <span class="hljs-comment">//注册事件</span></span><br><span class="line">	<span class="hljs-keyword">int</span> (*del)(<span class="hljs-keyword">void</span> *, struct event *);	   <span class="hljs-comment">//删除事件</span></span><br><span class="line">	<span class="hljs-keyword">int</span> (*dispatch)(struct event_base *, <span class="hljs-keyword">void</span> *, struct timeval *);  <span class="hljs-comment">//事件分发</span></span><br><span class="line">	<span class="hljs-keyword">void</span> (*dealloc)(struct event_base *, <span class="hljs-keyword">void</span> *);    <span class="hljs-comment">//注销，释放资源</span></span><br><span class="line">	<span class="hljs-comment">/* set if we need to reinitialize the event base */</span></span><br><span class="line">	<span class="hljs-keyword">int</span> need_reinit;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">```	</span><br><span class="line"></span><br><span class="line">在 libevent 中,每种 I/O demultiplex 机制的实现都必须提供这五个函数接口,来完成自</span><br><span class="line">身的初始化、销毁释放;对事件的注册、注销和分发。</span><br><span class="line"></span><br><span class="line">比如对于 epoll,libevent 实现了 <span class="hljs-number">5</span> 个对应的接口函数,并在初始化时并将 eventop 的 <span class="hljs-number">5</span></span><br><span class="line">个函数指针指向这 <span class="hljs-number">5</span> 个函数,那么程序就可以使用 epoll 作为 I/O demultiplex 机制了。</span><br><span class="line"></span><br><span class="line">## <span class="hljs-number">2</span>、设置 I/O demultiplex 机制</span><br><span class="line"></span><br><span class="line">Libevent 把所有支持的 I/O demultiplex 机制存储在一个全局静态数组 eventops 中,并在初始化时选择使用何种机制,数组内容根据优先级顺序声明如下:</span><br><span class="line"></span><br><span class="line">```CPP</span><br><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">const</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">eventop</span> *<span class="hljs-title">eventops</span>[] = &#123;</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_EVENT_PORTS</span></span><br><span class="line">	&amp;evportops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_WORKING_KQUEUE</span></span><br><span class="line">	&amp;kqops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_EPOLL</span></span><br><span class="line">	&amp;epollops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_DEVPOLL</span></span><br><span class="line">	&amp;devpollops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_POLL</span></span><br><span class="line">	&amp;pollops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> HAVE_SELECT</span></span><br><span class="line">	&amp;selectops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> WIN32</span></span><br><span class="line">	&amp;win32ops,</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line">	<span class="hljs-literal">NULL</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>然后 libevent 根据系统配置和编译选项决定使用哪一种 I/O demultiplex 机制,这段代码在函数event_base_new()中:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">//初始化决定使用哪种I/O demultiplex机制</span></span><br><span class="line">	base-&gt;evbase = <span class="hljs-literal">NULL</span>;</span><br><span class="line">	<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; eventops[i] &amp;&amp; !base-&gt;evbase; i++) &#123;</span><br><span class="line">		base-&gt;evsel = eventops[i];                   <span class="hljs-comment">//确定使用哪种I/O demultiplex机制</span></span><br><span class="line"></span><br><span class="line">		base-&gt;evbase = base-&gt;evsel-&gt;init(base);      <span class="hljs-comment">//实例化一个evsel，例如evsel为epoll，相当于调用epoll的init函数创建一个epoll实例</span></span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出,libevent 在编译阶段选择系统的 I/O demultiplex 机制,而不支持在运行阶段<br>根据配置再次选择。</p>
+<p>以 Linux 下面的 epoll 为例,实现在源文件 epoll.c 中,eventops 对象 epollops 定义如下:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">const</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">eventop</span> <span class="hljs-title">epollops</span> = &#123;</span></span><br><span class="line">	<span class="hljs-string">"epoll"</span>,</span><br><span class="line">	epoll_init,</span><br><span class="line">	epoll_add,</span><br><span class="line">	epoll_del,</span><br><span class="line">	epoll_dispatch,</span><br><span class="line">	epoll_dealloc,</span><br><span class="line">	<span class="hljs-number">1</span> <span class="hljs-comment">/* need reinit */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>变量 epollops 中的函数指针具体声明如下,注意到其返回值和参数都和 eventop 中的定义严格一致,这是函数指针的语法限制。</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> *<span class="hljs-title">epoll_init</span>	<span class="hljs-params">(struct event_base *)</span></span>;</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">epoll_add</span>	<span class="hljs-params">(<span class="hljs-keyword">void</span> *, struct event *)</span></span>;</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">epoll_del</span>	<span class="hljs-params">(<span class="hljs-keyword">void</span> *, struct event *)</span></span>;</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">epoll_dispatch</span>	<span class="hljs-params">(struct event_base *, <span class="hljs-keyword">void</span> *, struct timeval *)</span></span>;</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">epoll_dealloc</span>	<span class="hljs-params">(struct event_base *, <span class="hljs-keyword">void</span> *)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>那么如果选择的是 epoll,那么调用结构体 eventop 的 init 和 dispatch 函数指针时,实际调用的函数就是 epoll 的初始化函数 epoll_init()和事件分发函数 epoll_dispatch()了;</p>
+<p>同样的,上面 epollops 以及 epoll 的各种函数都直接定义在了 epoll.c 源文件中,对外都是不可见的。对于 libevent 的使用者而言,完全不会知道它们的存在,对 epoll 的使用也是通过 eventop 来完成的,达到了信息隐藏的目的。</p>
+<h2 id="3、小结"><a href="#3、小结" class="headerlink" title="3、小结"></a>3、小结</h2><p>支持多种 I/O demultiplex 机制的方法其实挺简单的,借助于函数指针就 OK 了。通过对源代码的分析也可以看出,Libevent 是在编译阶段选择系统的 I/O demultiplex 机制的,而不支持在运行阶段根据配置再次择。</p>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/网络编程/">网络编程</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
     <div class="card-content">
-        <h3 class="tag is-link">
-        2019
-        </h3>
-        <div class="timeline">
-        
-            <article class="media">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
                 
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-10T02:23:00.000Z">2019-05-10</time>
-                        <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="has-link-black-ter is-size-6">libevent源码剖析(8)--支持I/O多路复用</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipay.jpg" alt="支付宝"></div>
+</a>
+
                 
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-10T01:24:00.000Z">2019-05-10</time>
-                        <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="has-link-black-ter is-size-6">libevent源码剖析(7)--集成定时器事件</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-09T13:39:00.000Z">2019-05-09</time>
-                        <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="has-link-black-ter is-size-6">libevent源码剖析(6)--集成信号处理</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-09T01:48:00.000Z">2019-05-09</time>
-                        <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="has-link-black-ter is-size-6">libevent源码剖析(5)--事件主循环</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-08T09:11:00.000Z">2019-05-08</time>
-                        <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="has-link-black-ter is-size-6">libevent源码剖析(4)--事件处理框架</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-08T07:28:00.000Z">2019-05-08</time>
-                        <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="has-link-black-ter is-size-6">libevent源码剖析(3)--核心event</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-07T13:30:00.000Z">2019-05-07</time>
-                        <a href="/2019/05/07/libevent源码剖析-Reactor模式/" class="has-link-black-ter is-size-6">libevent源码剖析(2)--Reactor模式</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-07T12:58:00.000Z">2019-05-07</time>
-                        <a href="/2019/05/07/libevent源码剖析-libevent简介/" class="has-link-black-ter is-size-6">libevent源码剖析(1)--libevent简介及源码结构</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-04-26T14:01:00.000Z">2019-04-26</time>
-                        <a href="/2019/04/26/epoll反应堆模型/" class="has-link-black-ter is-size-6">epoll反应堆模型</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-03-18T06:43:00.000Z">2019-03-18</time>
-                        <a href="/2019/03/18/多态原理探究/" class="has-link-black-ter is-size-6">多态原理探究</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/C-心得/">C++心得</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
         </div>
     </div>
 </div>
 
-    
 
-    
+
 <div class="card card-transparent">
-    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
-        <div class="pagination-previous is-invisible is-hidden-mobile">
-            <a class="is-flex-grow has-text-black-ter" href="/archives/page/0/">上一页</a>
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/05/10/libevent源码剖析-7-集成定时器事件/">
+                <span class="level-item">libevent源码剖析(7)--集成定时器事件</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
         </div>
-        <div class="pagination-next">
-            <a class="is-flex-grow has-text-black-ter" href="/archives/page/2/">下一页</a>
-        </div>
-        <ul class="pagination-list is-hidden-mobile">
-            
-            <li><a class="pagination-link is-current" href="/archives/">1</a></li>
-            
-            <li><a class="pagination-link has-text-black-ter" href="/archives/page/2/">2</a></li>
-            
-        </ul>
-    </nav>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="lv-container" data-id="city" data-uid="MTAyMC80NDEzMi8yMDY2Nw==">
+    <script type="text/javascript">
+        (function(d, s) {
+            var j, e = d.getElementsByTagName(s)[0];
+
+            if (typeof LivereTower === 'function') { return; }
+
+            j = d.createElement(s);
+            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+            j.async = true;
+
+            e.parentNode.insertBefore(j, e);
+        })(document, 'script');
+    </script>
+    <noscript> Please activate JavaScript for write a comment in LiveRe</noscript>
+</div>
+
+    </div>
 </div>
 </div>
-                        <!-- 修改 -->
+                
+
+<!-- 粘贴的部分 -->
+                          <!-- 修改，可选保留的栏 -->
 
 
 
 
-<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left is-sticky">
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
     
         
 <div class="card widget">
@@ -747,191 +655,7 @@ var _hmt = _hmt || [];
 </div>
 
 
-<!-- 粘贴的部分 -->
-
-
-                        <!-- 修改 -->
-
-
-
-
-<div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right is-sticky">
-    
-        
-<div class="card widget">
-    <div class="card-content">
-        <h3 class="menu-label">
-            最新文章
-        </h3>
-        
-        <article class="media">
-            
-            <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(8)--支持I/O多路复用">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T02:23:00.000Z">2019-05-10</time></div>
-                    <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="has-link-black-ter is-size-6">libevent源码剖析(8)--支持I/O多路复用</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(7)--集成定时器事件">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T01:24:00.000Z">2019-05-10</time></div>
-                    <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="has-link-black-ter is-size-6">libevent源码剖析(7)--集成定时器事件</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(6)--集成信号处理">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-09T13:39:00.000Z">2019-05-09</time></div>
-                    <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="has-link-black-ter is-size-6">libevent源码剖析(6)--集成信号处理</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(5)--事件主循环">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-09T01:48:00.000Z">2019-05-09</time></div>
-                    <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="has-link-black-ter is-size-6">libevent源码剖析(5)--事件主循环</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(4)--事件处理框架">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-08T09:11:00.000Z">2019-05-08</time></div>
-                    <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="has-link-black-ter is-size-6">libevent源码剖析(4)--事件处理框架</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-    </div>
-</div>
-
-    
-        <div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-        <h3 class="menu-label">
-            归档
-        </h3>
-        <ul class="menu-list">
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/05/">
-                <span class="level-start">
-                    <span class="level-item">五月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">8</span>
-                </span>
-            </a>
-        </li>
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/04/">
-                <span class="level-start">
-                    <span class="level-item">四月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">1</span>
-                </span>
-            </a>
-        </li>
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/03/">
-                <span class="level-start">
-                    <span class="level-item">三月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">3</span>
-                </span>
-            </a>
-        </li>
-        
-        </ul>
-        </div>
-    </div>
-</div>
-    
-        <div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-            <h3 class="menu-label">
-                标签
-            </h3>
-            <div class="field is-grouped is-grouped-multiline">
                 
-                <div class="control">
-                    <a class="tags has-addons" href="/tags/网络编程/">
-                        <span class="tag">网络编程</span>
-                        <span class="tag is-grey">9</span>
-                    </a>
-                </div>
-                
-            </div>
-        </div>
-    </div>
-</div>
-    
-    
-</div>
-
 
 <!-- 粘贴的部分 -->
 
@@ -945,7 +669,7 @@ var _hmt = _hmt || [];
             <div class="level-start has-text-centered-mobile">
                 <a class="footer-logo is-block has-mb-6" href="/">
                 
-                    <img src="/images/冯泡泡.png" alt="愉快的泡泡" height="28">
+                    <img src="/images/冯泡泡.png" alt="libevent源码剖析(8)--支持I/O多路复用" height="28">
                 
                 </a>
                 <p class="is-size-7">

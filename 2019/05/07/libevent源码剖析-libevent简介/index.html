@@ -17,7 +17,7 @@
 <meta property="og:description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
-<meta property="og:updated_time" content="2019-05-08T02:42:59.284Z">
+<meta property="og:updated_time" content="2019-05-10T02:32:34.551Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="libevent源码剖析(1)--libevent简介及源码结构">
 <meta name="twitter:description" content="libevent简介及源码结构1、libevent简介libevent是一个C语言编写的轻量级的开源高性能网络库，其主要优点有如下几个：">
@@ -190,7 +190,7 @@ var _hmt = _hmt || [];
 <li>支持多种 I/O多路复用技术, epoll、poll、dev/poll、select 和kqueue 等</li>
 <li>支持 I/O,定时器和信号等事件</li>
 </ul>
-<h2 id="2、libevent源码结构"><a href="#2、libevent源码结构" class="headerlink" title="2、libevent源码结构"></a>2、libevent源码结构</h2><p>Libevent 的源代码虽然都在一层文件夹下面,但是其代码分类还是相当清晰的,主要可分为<br>头文件、内部使用的头文件、辅助功能函数、日志、libevent 框架、对系统 I/O 多路复用机<br>制的封装、信号管理、定时事件管理、缓冲区管理、基本数据结构和基于 libevent 的两个实<br>用库等几个部分,有些部分可能就是一个源文件。</p>
+<h2 id="2、libevent源码结构"><a href="#2、libevent源码结构" class="headerlink" title="2、libevent源码结构"></a>2、libevent源码结构</h2><p>Libevent 的源代码虽然都在一层文件夹下面,但是其代码分类还是相当清晰的,主要可分为头文件、内部使用的头文件、辅助功能函数、日志、libevent 框架、对系统 I/O 多路复用机制的封装、信号管理、定时事件管理、缓冲区管理、基本数据结构和基于 libevent 的两个实用库等几个部分,有些部分可能就是一个源文件。</p>
 <ul>
 <li><p><strong>1)头文件</strong></p>
 <p>主要就是 event.h:事件宏定义、接口函数声明,主要结构体 event 的声明;</p>
@@ -362,7 +362,7 @@ var _hmt = _hmt || [];
                         文章
                     </p>
                     <p class="title has-text-weight-normal">
-                        11
+                        12
                     </p>
                 </div>
             </div>
@@ -493,7 +493,7 @@ var _hmt = _hmt || [];
                 <span class="level-item">Linux</span>
             </span>
             <span class="level-end">
-                <span class="level-item tag">8</span>
+                <span class="level-item tag">9</span>
             </span>
         </a></li>
             </ul>
@@ -521,6 +521,25 @@ var _hmt = _hmt || [];
         <h3 class="menu-label">
             最新文章
         </h3>
+        
+        <article class="media">
+            
+            <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(8)--支持I/O多路复用">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T02:23:00.000Z">2019-05-10</time></div>
+                    <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="has-link-black-ter is-size-6">libevent源码剖析(8)--支持I/O多路复用</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
         
         <article class="media">
             
@@ -598,25 +617,6 @@ var _hmt = _hmt || [];
             </div>
         </article>
         
-        <article class="media">
-            
-            <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(3)--核心event">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-08T07:28:00.000Z">2019-05-08</time></div>
-                    <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="has-link-black-ter is-size-6">libevent源码剖析(3)--核心event</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
     </div>
 </div>
 
@@ -635,7 +635,7 @@ var _hmt = _hmt || [];
                     <span class="level-item">五月 2019</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">7</span>
+                    <span class="level-item tag">8</span>
                 </span>
             </a>
         </li>
@@ -678,7 +678,7 @@ var _hmt = _hmt || [];
                 <div class="control">
                     <a class="tags has-addons" href="/tags/网络编程/">
                         <span class="tag">网络编程</span>
-                        <span class="tag is-grey">8</span>
+                        <span class="tag is-grey">9</span>
                     </a>
                 </div>
                 

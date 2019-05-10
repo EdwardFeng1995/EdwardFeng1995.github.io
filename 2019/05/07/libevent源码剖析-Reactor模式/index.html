@@ -17,7 +17,7 @@
 <meta property="og:description" content="Reactor模式 整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
-<meta property="og:updated_time" content="2019-05-08T08:25:54.478Z">
+<meta property="og:updated_time" content="2019-05-10T02:32:06.996Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="libevent源码剖析(2)--Reactor模式">
 <meta name="twitter:description" content="Reactor模式 整个 libevent 本身就是一个 Reactor，所以在剖析libevent源码之前需要对Reactor有一个深入的理解。">
@@ -189,7 +189,7 @@ var _hmt = _hmt || [];
 <p>为了有效地解决这个问题,我们需要做到以下4方面:为了提高系统的可测量性和反应时间,应用程序不能长时间阻塞在某个事件源上而停止对其他事件的处理,这样会严重降低对客户端的响应度。为了提高吞吐量,任何没有必要的上下文切换、同步和CPU之间的数据移动都要避免。引进新的服务或改良已有的服务都要对既有的事件分离和调度机制带来尽可能小的影响。大量的应用程序代码需要隐藏在复杂的多线程和同步机制之后。</p>
 <p>这就是Ractor模式要解决的问题。</p>
 <h2 id="1、Reactor事件处理机制"><a href="#1、Reactor事件处理机制" class="headerlink" title="1、Reactor事件处理机制"></a>1、Reactor事件处理机制</h2><p>首先来回想一下普通函数调用的机制:程序调用某函数函数执行，程序等待函数将结果和控制权返回给程序程序继续处理。</p>
-<p>Reactor 释义“反应堆”,是一种事件驱动机制。和普通函数调用的不同之处在于:应用<br>程序不是主动的调用某个 API 完成处理,而是恰恰相反,Reactor 逆置了事件处理流程,应<br>用程序需要提供相应的接口并注册到 Reactor 上,如果相应的时间发生, Reactor 将主动调用<br>应用程序注册的接口,这些接口又称为“回调函数”。使用 Libevent 也是想 Libevent 框架注<br>册相应的事件和回调函数;当这些时间发声时,Libevent 会调用这些回调函数处理相应的事<br>件(I/O 读写、定时和信号)。</p>
+<p>Reactor 释义“反应堆”,是一种事件驱动机制。和普通函数调用的不同之处在于:应用程序不是主动的调用某个 API 完成处理,而是恰恰相反,Reactor 逆置了事件处理流程,应用程序需要提供相应的接口并注册到 Reactor 上,如果相应的时间发生, Reactor 将主动调用应用程序注册的接口,这些接口又称为“回调函数”。使用 Libevent 也是想 Libevent 框架注册相应的事件和回调函数;当这些时间发声时,Libevent 会调用这些回调函数处理相应的事件(I/O 读写、定时和信号)。</p>
 <p>用“好莱坞原则”来形容 Reactor 再合适不过了:不要打电话给我们,我们会打电话通知你。</p>
 <p>举个例子:你去应聘某 xx 公司,面试结束后。</p>
 <p>“普通函数调用机制”公司 HR 比较懒,不会记你的联系方式,那怎么办呢,你只能面试完后自己打电话去问结果;有没有被录取啊,还是被据了;</p>
@@ -371,7 +371,7 @@ var _hmt = _hmt || [];
                         文章
                     </p>
                     <p class="title has-text-weight-normal">
-                        11
+                        12
                     </p>
                 </div>
             </div>
@@ -502,7 +502,7 @@ var _hmt = _hmt || [];
                 <span class="level-item">Linux</span>
             </span>
             <span class="level-end">
-                <span class="level-item tag">8</span>
+                <span class="level-item tag">9</span>
             </span>
         </a></li>
             </ul>
@@ -530,6 +530,25 @@ var _hmt = _hmt || [];
         <h3 class="menu-label">
             最新文章
         </h3>
+        
+        <article class="media">
+            
+            <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(8)--支持I/O多路复用">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T02:23:00.000Z">2019-05-10</time></div>
+                    <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="has-link-black-ter is-size-6">libevent源码剖析(8)--支持I/O多路复用</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
         
         <article class="media">
             
@@ -607,25 +626,6 @@ var _hmt = _hmt || [];
             </div>
         </article>
         
-        <article class="media">
-            
-            <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(3)--核心event">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-08T07:28:00.000Z">2019-05-08</time></div>
-                    <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="has-link-black-ter is-size-6">libevent源码剖析(3)--核心event</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
     </div>
 </div>
 
@@ -644,7 +644,7 @@ var _hmt = _hmt || [];
                     <span class="level-item">五月 2019</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">7</span>
+                    <span class="level-item tag">8</span>
                 </span>
             </a>
         </li>
@@ -687,7 +687,7 @@ var _hmt = _hmt || [];
                 <div class="control">
                     <a class="tags has-addons" href="/tags/网络编程/">
                         <span class="tag">网络编程</span>
-                        <span class="tag is-grey">8</span>
+                        <span class="tag is-grey">9</span>
                     </a>
                 </div>
                 
