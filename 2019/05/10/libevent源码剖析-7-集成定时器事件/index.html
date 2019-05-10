@@ -3,23 +3,24 @@
 <html lang="zh">
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-<title>标签 - 愉快的泡泡</title>
+<title>libevent源码剖析(7)--集成定时器事件 - 愉快的泡泡</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
 
 
-    <meta name="description" content="个人学习心得，随笔">
+    <meta name="description" content="现在再来详细分析 libevent 中 I/O 事件和 Timer 事件的集成,与 Signal 相比,Timer 事件的集成会直观和简单很多。Libevent 对堆的调整操作做了一些优化,本节还会描述这些优化方法。">
 <meta name="keywords" content="网络编程">
-<meta property="og:type" content="website">
-<meta property="og:title" content="愉快的泡泡">
-<meta property="og:url" content="http://yoursite.com/tags/index.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libevent源码剖析(7)--集成定时器事件">
+<meta property="og:url" content="http://yoursite.com/2019/05/10/libevent源码剖析-7-集成定时器事件/index.html">
 <meta property="og:site_name" content="愉快的泡泡">
-<meta property="og:description" content="个人学习心得，随笔">
+<meta property="og:description" content="现在再来详细分析 libevent 中 I/O 事件和 Timer 事件的集成,与 Signal 相比,Timer 事件的集成会直观和简单很多。Libevent 对堆的调整操作做了一些优化,本节还会描述这些优化方法。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
+<meta property="og:updated_time" content="2019-05-10T02:02:03.302Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="愉快的泡泡">
-<meta name="twitter:description" content="个人学习心得，随笔">
+<meta name="twitter:title" content="libevent源码剖析(7)--集成定时器事件">
+<meta name="twitter:description" content="现在再来详细分析 libevent 中 I/O 事件和 Timer 事件的集成,与 Signal 相比,Timer 事件的集成会直观和简单很多。Libevent 对堆的调整操作做了一些优化,本节还会描述这些优化方法。">
 <meta name="twitter:image" content="http://yoursite.com/images/og_image.png">
 
 
@@ -104,7 +105,7 @@ var _hmt = _hmt || [];
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/冯泡泡.png" alt="愉快的泡泡" height="28">
+                <img src="/images/冯泡泡.png" alt="libevent源码剖析(7)--集成定时器事件" height="28">
             
             </a>
         </div>
@@ -118,7 +119,7 @@ var _hmt = _hmt || [];
                 
                 <a class="navbar-item" href="/categories">Categories</a>
                 
-                <a class="navbar-item is-active" href="/tags">Tags</a>
+                <a class="navbar-item" href="/tags">Tags</a>
                 
                 <a class="navbar-item" href="/about">About</a>
                 
@@ -152,31 +153,150 @@ var _hmt = _hmt || [];
     <section class="section">
         <div class="container">
             <div class="columns">
-                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main"><div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-            <h3 class="menu-label">
-                标签
-            </h3>
-            <div class="field is-grouped is-grouped-multiline">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-05-10T01:24:00.000Z">2019-05-10</time>
                 
-                <div class="control">
-                    <a class="tags has-addons" href="/tags/网络编程/">
-                        <span class="tag">网络编程</span>
-                        <span class="tag is-grey">8</span>
-                    </a>
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                 </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    7 分钟 读完 (大约 1115 个字)
+                </span>
+                
                 
             </div>
         </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                libevent源码剖析(7)--集成定时器事件
+            
+        </h1>
+        <div class="content">
+            <p><img src="/images/pasted-16.png" alt="upload successful"></p>
+<p>现在再来详细分析 libevent 中 I/O 事件和 Timer 事件的集成,与 Signal 相比,Timer 事件的集成会直观和简单很多。Libevent 对堆的调整操作做了一些优化,本节还会描述这些优化方法。</p>
+<a id="more"></a>
+<h2 id="1、集成到事件主循环"><a href="#1、集成到事件主循环" class="headerlink" title="1、集成到事件主循环"></a>1、集成到事件主循环</h2><p>因为系统的 I/O 机制像 select()和 epoll_wait()都允许程序制定一个最大等待时间(也称为最大超时时间)timeout,即使没有 I/O 事件发生,它们也保证能在 timeout 时间内返回。</p>
+<p>那么根据所有 Timer 事件的最小超时时间来设置系统 I/O 的 timeout 时间;当系统 I/O返回时,再激活所有就绪的 Timer 事件就可以了,这样就能将 Timer 事件完美的融合到系统的 I/O 机制中了。</p>
+<p>具体的代码在源文件 event.c 的 event_base_loop()中,现在就对比代码来看看这一处理方法:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span></span><br><span class="line">timeout_next(struct event_base *base, struct timeval **tv_p)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timeval</span> <span class="hljs-title">now</span>;</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event</span> *<span class="hljs-title">ev</span>;</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timeval</span> *<span class="hljs-title">tv</span> = *<span class="hljs-title">tv_p</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//堆的首元素具有最小的超时值</span></span><br><span class="line">	<span class="hljs-keyword">if</span> ((ev = min_heap_top(&amp;base-&gt;timeheap)) == <span class="hljs-literal">NULL</span>) &#123;</span><br><span class="line">		<span class="hljs-comment">// 如果没有定时事件,将等待时间设置为NULL,表示一直阻塞直到有I/O事件发生</span></span><br><span class="line">		<span class="hljs-comment">/* if no time-based events are active wait for I/O */</span></span><br><span class="line">		*tv_p = <span class="hljs-literal">NULL</span>;</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//取得当前时间</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (gettime(base, &amp;now) == <span class="hljs-number">-1</span>)</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//如果超时事件&lt;=当前值，不能等待，需要立即返回</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (evutil_timercmp(&amp;ev-&gt;ev_timeout, &amp;now, &lt;=)) &#123;</span><br><span class="line">		evutil_timerclear(tv);</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//计算等待的事件=当前事件-最小的超时时间</span></span><br><span class="line">	evutil_timersub(&amp;ev-&gt;ev_timeout, &amp;now, tv);</span><br><span class="line"></span><br><span class="line">	assert(tv-&gt;tv_sec &gt;= <span class="hljs-number">0</span>);</span><br><span class="line">	assert(tv-&gt;tv_usec &gt;= <span class="hljs-number">0</span>);</span><br><span class="line"></span><br><span class="line">	event_debug((<span class="hljs-string">"timeout_next: in %ld seconds"</span>, tv-&gt;tv_sec));</span><br><span class="line">	<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="2、Timer小根堆"><a href="#2、Timer小根堆" class="headerlink" title="2、Timer小根堆"></a>2、Timer小根堆</h2><p>Libevent 使用堆来管理 Timer 事件,其 key 值就是事件的超时时间,源代码位于文件min_heap.h 中。</p>
+<p>所有的数据结构书中都有关于堆的详细介绍,向堆中插入、删除元素时间复杂度都是O(lgN),N 为堆中元素的个数,而获取最小 key 值(小根堆)的复杂度为 O(1)。堆是一个完全二叉树,基本存储方式是一个数组。</p>
+<p>Libevent 实现的堆还是比较轻巧的。轻巧到什么地方呢,就以插入元素为例,来对比说明,下面伪代码中的 size 表示当前堆的元素个数:</p>
+<p>典型的代码逻辑如下：</p>
+<p><img src="/images/pasted-17.png" alt="upload successful"></p>
+<p>而 libevent 的 heap 代码对这一过程做了优化,在插入新元素时,只是为新元素预留了一个位置 hole(初始时 hole 位于数组尾部),但并不立刻将新元素插入到 hole 上,而是不断向上调整 hole 的值,将父节点向下调整,最后确认 hole 就是新元素的所在位置时,才会真正的将新元素插入到 hole 上,因此在调整过程中就比上面的代码少了一次赋值的操作,代码逻辑是:</p>
+<p><img src="/images/pasted-18.png" alt="upload successful"></p>
+<p>由于每次调整都少做一次赋值操作,在调整路径比较长时,调整效率会比第一种有所提高。libevent 中的min_heap_shift_up_()函数就是上面逻辑的具体实现,对应的向下调整函数是min_heap_shift_down_()。</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">min_heap_shift_up_</span><span class="hljs-params">(<span class="hljs-keyword">min_heap_t</span>* s, <span class="hljs-keyword">unsigned</span> hole_index, struct event* e)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">    <span class="hljs-keyword">unsigned</span> parent = (hole_index - <span class="hljs-number">1</span>) / <span class="hljs-number">2</span>;</span><br><span class="line">    <span class="hljs-keyword">while</span>(hole_index &amp;&amp; min_heap_elem_greater(s-&gt;p[parent], e))</span><br><span class="line">    &#123;</span><br><span class="line">        (s-&gt;p[hole_index] = s-&gt;p[parent])-&gt;min_heap_idx = hole_index;</span><br><span class="line">        hole_index = parent;</span><br><span class="line">        parent = (hole_index - <span class="hljs-number">1</span>) / <span class="hljs-number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    (s-&gt;p[hole_index] = e)-&gt;min_heap_idx = hole_index;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">min_heap_shift_down_</span><span class="hljs-params">(<span class="hljs-keyword">min_heap_t</span>* s, <span class="hljs-keyword">unsigned</span> hole_index, struct event* e)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">    <span class="hljs-keyword">unsigned</span> min_child = <span class="hljs-number">2</span> * (hole_index + <span class="hljs-number">1</span>);</span><br><span class="line">    <span class="hljs-keyword">while</span>(min_child &lt;= s-&gt;n)</span><br><span class="line">	&#123;</span><br><span class="line">        min_child -= min_child == s-&gt;n || min_heap_elem_greater(s-&gt;p[min_child], s-&gt;p[min_child - <span class="hljs-number">1</span>]);</span><br><span class="line">        <span class="hljs-keyword">if</span>(!(min_heap_elem_greater(e, s-&gt;p[min_child])))</span><br><span class="line">            <span class="hljs-keyword">break</span>;</span><br><span class="line">        (s-&gt;p[hole_index] = s-&gt;p[min_child])-&gt;min_heap_idx = hole_index;</span><br><span class="line">        hole_index = min_child;</span><br><span class="line">        min_child = <span class="hljs-number">2</span> * (hole_index + <span class="hljs-number">1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">    min_heap_shift_up_(s, hole_index,  e);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>举个例子,向一个小根堆 3, 5, 8, 7, 12 中插入新元素 2,使用第一中典型的代码逻辑,其调整过程如下图所示:</p>
+<p><img src="/images/pasted-19.png" alt="upload successful"></p>
+<p>使用 libevent 中的堆调整逻辑,调整过程如下图所示:</p>
+<p><img src="/images/pasted-20.png" alt="upload successful"></p>
+<p>对于删除和元素修改操作,也遵从相同的逻辑,就不再罗嗦了。</p>
+<h2 id="3、小结"><a href="#3、小结" class="headerlink" title="3、小结"></a>3、小结</h2><p>通过设置系统 I/O 机制的 wait 时间,从而简捷的集成 Timer 事件;主要分析了 libevent对堆调整操作的优化。</p>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/网络编程/">网络编程</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
     </div>
-</div></div>
-                        <!-- 修改 -->
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipay.jpg" alt="支付宝"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/05/09/libevent源码剖析-6-集成信号处理/">
+                <span class="level-item">libevent源码剖析(6)--集成信号处理</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="lv-container" data-id="city" data-uid="MTAyMC80NDEzMi8yMDY2Nw==">
+    <script type="text/javascript">
+        (function(d, s) {
+            var j, e = d.getElementsByTagName(s)[0];
+
+            if (typeof LivereTower === 'function') { return; }
+
+            j = d.createElement(s);
+            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+            j.async = true;
+
+            e.parentNode.insertBefore(j, e);
+        })(document, 'script');
+    </script>
+    <noscript> Please activate JavaScript for write a comment in LiveRe</noscript>
+</div>
+
+    </div>
+</div>
+</div>
+                
+
+<!-- 粘贴的部分 -->
+                          <!-- 修改，可选保留的栏 -->
 
 
 
 
-<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left is-sticky">
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
     
         
 <div class="card widget">
@@ -543,191 +663,7 @@ var _hmt = _hmt || [];
 </div>
 
 
-<!-- 粘贴的部分 -->
-
-
-                        <!-- 修改 -->
-
-
-
-
-<div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right is-sticky">
-    
-        
-<div class="card widget">
-    <div class="card-content">
-        <h3 class="menu-label">
-            最新文章
-        </h3>
-        
-        <article class="media">
-            
-            <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(7)--集成定时器事件">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T01:24:00.000Z">2019-05-10</time></div>
-                    <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="has-link-black-ter is-size-6">libevent源码剖析(7)--集成定时器事件</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(6)--集成信号处理">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-09T13:39:00.000Z">2019-05-09</time></div>
-                    <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="has-link-black-ter is-size-6">libevent源码剖析(6)--集成信号处理</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(5)--事件主循环">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-09T01:48:00.000Z">2019-05-09</time></div>
-                    <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="has-link-black-ter is-size-6">libevent源码剖析(5)--事件主循环</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(4)--事件处理框架">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-08T09:11:00.000Z">2019-05-08</time></div>
-                    <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="has-link-black-ter is-size-6">libevent源码剖析(4)--事件处理框架</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(3)--核心event">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-08T07:28:00.000Z">2019-05-08</time></div>
-                    <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="has-link-black-ter is-size-6">libevent源码剖析(3)--核心event</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-    </div>
-</div>
-
-    
-        <div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-        <h3 class="menu-label">
-            归档
-        </h3>
-        <ul class="menu-list">
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/05/">
-                <span class="level-start">
-                    <span class="level-item">五月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">7</span>
-                </span>
-            </a>
-        </li>
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/04/">
-                <span class="level-start">
-                    <span class="level-item">四月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">1</span>
-                </span>
-            </a>
-        </li>
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/03/">
-                <span class="level-start">
-                    <span class="level-item">三月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">3</span>
-                </span>
-            </a>
-        </li>
-        
-        </ul>
-        </div>
-    </div>
-</div>
-    
-        <div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-            <h3 class="menu-label">
-                标签
-            </h3>
-            <div class="field is-grouped is-grouped-multiline">
                 
-                <div class="control">
-                    <a class="tags has-addons" href="/tags/网络编程/">
-                        <span class="tag">网络编程</span>
-                        <span class="tag is-grey">8</span>
-                    </a>
-                </div>
-                
-            </div>
-        </div>
-    </div>
-</div>
-    
-    
-</div>
-
 
 <!-- 粘贴的部分 -->
 
@@ -741,7 +677,7 @@ var _hmt = _hmt || [];
             <div class="level-start has-text-centered-mobile">
                 <a class="footer-logo is-block has-mb-6" href="/">
                 
-                    <img src="/images/冯泡泡.png" alt="愉快的泡泡" height="28">
+                    <img src="/images/冯泡泡.png" alt="libevent源码剖析(7)--集成定时器事件" height="28">
                 
                 </a>
                 <p class="is-size-7">
