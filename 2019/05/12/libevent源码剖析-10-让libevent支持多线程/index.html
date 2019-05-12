@@ -3,22 +3,24 @@
 <html lang="zh">
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-<title>归档: 2019 - 愉快的泡泡</title>
+<title>libevent源码剖析(10)--让libevent支持多线程 - 愉快的泡泡</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
 
 
-    <meta name="description" content="个人学习心得，随笔">
-<meta property="og:type" content="website">
-<meta property="og:title" content="愉快的泡泡">
-<meta property="og:url" content="http://yoursite.com/archives/2019/index.html">
+    <meta name="description" content="Libevent 本身不是多线程安全的，在多核的时代，如何能充分利用 CPU 的能力呢，这一节来说说如何在多线程环境中使用 libevent，跟源代码并没有太大的关系，纯粹是使用上的技巧。">
+<meta name="keywords" content="网络编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libevent源码剖析(10)--让libevent支持多线程">
+<meta property="og:url" content="http://yoursite.com/2019/05/12/libevent源码剖析-10-让libevent支持多线程/index.html">
 <meta property="og:site_name" content="愉快的泡泡">
-<meta property="og:description" content="个人学习心得，随笔">
+<meta property="og:description" content="Libevent 本身不是多线程安全的，在多核的时代，如何能充分利用 CPU 的能力呢，这一节来说说如何在多线程环境中使用 libevent，跟源代码并没有太大的关系，纯粹是使用上的技巧。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
+<meta property="og:updated_time" content="2019-05-12T07:56:28.988Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="愉快的泡泡">
-<meta name="twitter:description" content="个人学习心得，随笔">
+<meta name="twitter:title" content="libevent源码剖析(10)--让libevent支持多线程">
+<meta name="twitter:description" content="Libevent 本身不是多线程安全的，在多核的时代，如何能充分利用 CPU 的能力呢，这一节来说说如何在多线程环境中使用 libevent，跟源代码并没有太大的关系，纯粹是使用上的技巧。">
 <meta name="twitter:image" content="http://yoursite.com/images/og_image.png">
 
 
@@ -103,7 +105,7 @@ var _hmt = _hmt || [];
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/冯泡泡.png" alt="愉快的泡泡" height="28">
+                <img src="/images/冯泡泡.png" alt="libevent源码剖析(10)--让libevent支持多线程" height="28">
             
             </a>
         </div>
@@ -151,236 +153,168 @@ var _hmt = _hmt || [];
     <section class="section">
         <div class="container">
             <div class="columns">
-                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-05-12T07:37:00.000Z">2019-05-12</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/LInux/">LInux</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    10 分钟 读完 (大约 1443 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                libevent源码剖析(10)--让libevent支持多线程
+            
+        </h1>
+        <div class="content">
+            <p>Libevent 本身不是多线程安全的，在多核的时代，如何能充分利用 CPU 的能力呢，这一节来说说如何在多线程环境中使用 libevent，跟源代码并没有太大的关系，纯粹是使用上的技巧。</p>
+<a id="more"></a>
+<h2 id="1、错误使用示例"><a href="#1、错误使用示例" class="headerlink" title="1、错误使用示例"></a>1、错误使用示例</h2><p>在多核的 CPU 上只使用一个线程始终是对不起 CPU 的处理能力啊，那好吧，那就多创建几个线程，比如下面的简单服务器场景。</p>
+<p>1 主线程创建工作线程1；</p>
+<p>2 接着主线程监听在端口上,等待新的连接；</p>
+<p>3 在线程 1 中执行 event 事件循环,等待事件到来;</p>
+<p>4 新连接到来,主线程调用 libevent 接口 event_add 将新连接注册到 libevent 上;</p>
+<p>… …</p>
+<p>上面的逻辑看起来没什么错误,在很多服务器设计中都可能用到主线程和工作线程的模式….</p>
+<p>可是就在线程 1 注册事件时,主线程很可能也在操作事件,比如删除,修改,通过 libevent的源代码也能看到,没有同步保护机制,问题麻烦了,看起来不能这样做啊,难道只能使用单线程不成!?</p>
+<h2 id="2、支持多线程的几种模式"><a href="#2、支持多线程的几种模式" class="headerlink" title="2、支持多线程的几种模式"></a>2、支持多线程的几种模式</h2><p>Libevent 并不是线程安全的,但这不代表 libevent 不支持多线程模式,其实方法在前面已经将 signal 事件处理时就接触到了,那就是消息通知机制。</p>
+<p>一句话，<strong>“你发消息通知我,然后再由我在合适的时间来处理”</strong>；</p>
+<p>说到这就再多说几句，再打个比方，把你自己比作一个工作线程，而你的头是主线程，你有一个消息信箱来接收别人发给你的消息，当时头有个新任务要指派给你。</p>
+<h3 id="2-1暴力抢占"><a href="#2-1暴力抢占" class="headerlink" title="2.1暴力抢占"></a>2.1暴力抢占</h3><p>那么第一节中使用的多线程方法相当下面的流程:</p>
+<p>1 当时你正在做事,比如在写文档;</p>
+<p>2 你的头找到了一个任务,要指派给你,比如帮他搞个 PPT,哈;</p>
+<p>3 头命令你马上搞 PPT,你这是不得不停止手头的工作,把 PPT 搞定了再接着写文档;</p>
+<p>…</p>
+<h3 id="2-2纯粹的消息通知机制"><a href="#2-2纯粹的消息通知机制" class="headerlink" title="2.2纯粹的消息通知机制"></a>2.2纯粹的消息通知机制</h3><p>那么基于纯粹的消息通知机制的多线程方式就像下面这样:</p>
+<p>1 当时你正在写文档;</p>
+<p>2 你的头找到了一个任务,要指派给你,帮他搞个 PPT;</p>
+<p>3 头发个消息到你信箱,有个 PPT 要帮他搞定,这时你并不鸟他;</p>
+<p>4 你写好文档,接着检查消息发现头有个 PPT 要你搞定,你开始搞 PPT;</p>
+<p>…</p>
+<p>第一种的好处是消息可以立即得到处理,但是很方法很粗暴,你必须立即处理这个消息,所以你必须处理好切换问题,省得把文档上的内容不小心写到 PPT 里。在操作系统的进程通信中,消息队列(消息信箱)都是操作系统维护的,你不必关心。</p>
+<p>第二种的优点是通过消息通知,切换问题省心了,不过消息是不能立即处理的(基于消息通知机制,这个总是难免的),而且所有的内容都通过消息发送,比如 PPT 的格式、内容等等信息,这无疑增加了通信开销。</p>
+<h3 id="2-3消息通知-同步"><a href="#2-3消息通知-同步" class="headerlink" title="2.3消息通知+同步"></a>2.3消息通知+同步</h3><p>有个折中机制可以减少消息通信的开销,就是提取一个同步层,还拿上面的例子来说,你把工作安排都存放在一个工作队列中,而且你能够保证“任何人把新任务扔到这个队列”,“自己取出当前第一个任务”等这些操作都能够保证不会把队列搞乱(其实就是个加锁的队列容器)。</p>
+<p>再来看看处理过程和上面有什么不同:</p>
+<p>1 当时你正在写文档;</p>
+<p>2 你的头找到了一个任务,要指派给你,帮他搞个 PPT;</p>
+<p>2 头有个 PPT 要你搞定,他把任务 push 到你的工作队列中,包括了 PPT 的格式、内容等信息;</p>
+<p>3 头发个消息(一个字节)到你信箱,有个 PPT 要帮他搞定,这时你并不鸟他;</p>
+<p>4 你写好文档,发现有新消息(这预示着有新任务来了),检查工作队列知道头有个 PPT要你搞定,你开始搞 PPT;</p>
+<p>…</p>
+<p>工作队列其实就是一个加锁的容器(队列、链表等等),这个很容易实现实现;而消息通知仅需要一个字节,具体的任务都 push 到了在工作队列中,因此相比 2.2 减少了不少通信开销。</p>
+<p>多线程编程有很多陷阱,线程间资源的同步互斥不是一两句能说得清的,而且出现 bug很难跟踪调试;这也有很多的经验和教训,因此如果让我选择,在绝大多数情况下都会选择机制 3 作为实现多线程的方法。</p>
+<h2 id="3、例子——memcached"><a href="#3、例子——memcached" class="headerlink" title="3、例子——memcached"></a>3、例子——memcached</h2><p>Memcached 中的网络部分就是基于 libevent 完成的,其中的多线程模型就是典型的消息通知+同步层机制。下面的图足够说明其多线程模型了,其中有详细的文字说明。</p>
+<p><img src="/images/pasted-28.png" alt="upload successful"></p>
+<p>注:该图的具体出处忘记了,感谢原作者。</p>
+<h2 id="4、小结"><a href="#4、小结" class="headerlink" title="4、小结"></a>4、小结</h2><p>本节更是 libevent 的使用方面的技巧,讨论了一下如何让 libevent 支持多线程,以及几种支持多线程的机制,memcached 使用 libevent 的多线程模型。</p>
 
-<div class="card widget">
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/网络编程/">网络编程</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
     <div class="card-content">
-        <h3 class="tag is-link">
-        2019
-        </h3>
-        <div class="timeline">
-        
-            <article class="media">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
                 
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-12T07:37:00.000Z">2019-05-12</time>
-                        <a href="/2019/05/12/libevent源码剖析-10-让libevent支持多线程/" class="has-link-black-ter is-size-6">libevent源码剖析(10)--让libevent支持多线程</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/LInux/">LInux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipay.jpg" alt="支付宝"></div>
+</a>
+
                 
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-12T06:42:00.000Z">2019-05-12</time>
-                        <a href="/2019/05/12/libevent源码剖析-9-时间管理/" class="has-link-black-ter is-size-6">libevent源码剖析(9)--时间管理</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-10T07:20:00.000Z">2019-05-10</time>
-                        <a href="/2019/05/10/I-O之同步、异步、阻塞、非阻塞/" class="has-link-black-ter is-size-6">I/O之同步、异步、阻塞、非阻塞</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-10T02:23:00.000Z">2019-05-10</time>
-                        <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="has-link-black-ter is-size-6">libevent源码剖析(8)--支持I/O多路复用</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-10T01:24:00.000Z">2019-05-10</time>
-                        <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="has-link-black-ter is-size-6">libevent源码剖析(7)--集成定时器事件</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-09T13:39:00.000Z">2019-05-09</time>
-                        <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="has-link-black-ter is-size-6">libevent源码剖析(6)--集成信号处理</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-09T01:48:00.000Z">2019-05-09</time>
-                        <a href="/2019/05/09/libevent源码剖析-5-事件主循环/" class="has-link-black-ter is-size-6">libevent源码剖析(5)--事件主循环</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-08T09:11:00.000Z">2019-05-08</time>
-                        <a href="/2019/05/08/libevent源码剖析-4-事件处理框架/" class="has-link-black-ter is-size-6">libevent源码剖析(4)--事件处理框架</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-08T07:28:00.000Z">2019-05-08</time>
-                        <a href="/2019/05/08/libevent源码剖析-3-核心event/" class="has-link-black-ter is-size-6">libevent源码剖析(3)--核心event</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
-            <article class="media">
-                
-                <div class="media-content">
-                    <div class="content">
-                        <time class="has-text-grey is-size-7 is-block is-uppercase" datetime="2019-05-07T13:30:00.000Z">2019-05-07</time>
-                        <a href="/2019/05/07/libevent源码剖析-Reactor模式/" class="has-link-black-ter is-size-6">libevent源码剖析(2)--Reactor模式</a>
-                        <div class="level article-meta is-mobile">
-                            <div class="level-left">
-                                
-                                <div class="level-item is-size-7 is-uppercase">
-                                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        
         </div>
     </div>
 </div>
 
 
 
-    
 <div class="card card-transparent">
-    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
-        <div class="pagination-previous is-invisible is-hidden-mobile">
-            <a class="is-flex-grow has-text-black-ter" href="/archives/2019/page/0/">上一页</a>
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/05/12/libevent源码剖析-9-时间管理/">
+                <span class="level-item">libevent源码剖析(9)--时间管理</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
         </div>
-        <div class="pagination-next">
-            <a class="is-flex-grow has-text-black-ter" href="/archives/2019/page/2/">下一页</a>
-        </div>
-        <ul class="pagination-list is-hidden-mobile">
-            
-            <li><a class="pagination-link is-current" href="/archives/2019/">1</a></li>
-            
-            <li><a class="pagination-link has-text-black-ter" href="/archives/2019/page/2/">2</a></li>
-            
-        </ul>
-    </nav>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="lv-container" data-id="city" data-uid="MTAyMC80NDEzMi8yMDY2Nw==">
+    <script type="text/javascript">
+        (function(d, s) {
+            var j, e = d.getElementsByTagName(s)[0];
+
+            if (typeof LivereTower === 'function') { return; }
+
+            j = d.createElement(s);
+            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+            j.async = true;
+
+            e.parentNode.insertBefore(j, e);
+        })(document, 'script');
+    </script>
+    <noscript> Please activate JavaScript for write a comment in LiveRe</noscript>
+</div>
+
+    </div>
 </div>
 </div>
-                        <!-- 修改 -->
+                
+
+<!-- 粘贴的部分 -->
+                          <!-- 修改，可选保留的栏 -->
 
 
 
 
-<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left is-sticky">
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
     
         
 <div class="card widget">
@@ -755,191 +689,7 @@ var _hmt = _hmt || [];
 </div>
 
 
-<!-- 粘贴的部分 -->
-
-
-                        <!-- 修改 -->
-
-
-
-
-<div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right is-sticky">
-    
-        
-<div class="card widget">
-    <div class="card-content">
-        <h3 class="menu-label">
-            最新文章
-        </h3>
-        
-        <article class="media">
-            
-            <a href="/2019/05/12/libevent源码剖析-10-让libevent支持多线程/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(10)--让libevent支持多线程">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-12T07:37:00.000Z">2019-05-12</time></div>
-                    <a href="/2019/05/12/libevent源码剖析-10-让libevent支持多线程/" class="has-link-black-ter is-size-6">libevent源码剖析(10)--让libevent支持多线程</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/LInux/">LInux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/12/libevent源码剖析-9-时间管理/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(9)--时间管理">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-12T06:42:00.000Z">2019-05-12</time></div>
-                    <a href="/2019/05/12/libevent源码剖析-9-时间管理/" class="has-link-black-ter is-size-6">libevent源码剖析(9)--时间管理</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/10/I-O之同步、异步、阻塞、非阻塞/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="I/O之同步、异步、阻塞、非阻塞">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T07:20:00.000Z">2019-05-10</time></div>
-                    <a href="/2019/05/10/I-O之同步、异步、阻塞、非阻塞/" class="has-link-black-ter is-size-6">I/O之同步、异步、阻塞、非阻塞</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(8)--支持I/O多路复用">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T02:23:00.000Z">2019-05-10</time></div>
-                    <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="has-link-black-ter is-size-6">libevent源码剖析(8)--支持I/O多路复用</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(7)--集成定时器事件">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T01:24:00.000Z">2019-05-10</time></div>
-                    <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="has-link-black-ter is-size-6">libevent源码剖析(7)--集成定时器事件</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-    </div>
-</div>
-
-    
-        <div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-        <h3 class="menu-label">
-            归档
-        </h3>
-        <ul class="menu-list">
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/05/">
-                <span class="level-start">
-                    <span class="level-item">五月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">11</span>
-                </span>
-            </a>
-        </li>
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/04/">
-                <span class="level-start">
-                    <span class="level-item">四月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">1</span>
-                </span>
-            </a>
-        </li>
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/03/">
-                <span class="level-start">
-                    <span class="level-item">三月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">3</span>
-                </span>
-            </a>
-        </li>
-        
-        </ul>
-        </div>
-    </div>
-</div>
-    
-        <div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-            <h3 class="menu-label">
-                标签
-            </h3>
-            <div class="field is-grouped is-grouped-multiline">
                 
-                <div class="control">
-                    <a class="tags has-addons" href="/tags/网络编程/">
-                        <span class="tag">网络编程</span>
-                        <span class="tag is-grey">12</span>
-                    </a>
-                </div>
-                
-            </div>
-        </div>
-    </div>
-</div>
-    
-    
-</div>
-
 
 <!-- 粘贴的部分 -->
 
@@ -953,7 +703,7 @@ var _hmt = _hmt || [];
             <div class="level-start has-text-centered-mobile">
                 <a class="footer-logo is-block has-mb-6" href="/">
                 
-                    <img src="/images/冯泡泡.png" alt="愉快的泡泡" height="28">
+                    <img src="/images/冯泡泡.png" alt="libevent源码剖析(10)--让libevent支持多线程" height="28">
                 
                 </a>
                 <p class="is-size-7">
