@@ -3,22 +3,24 @@
 <html lang="zh">
 <head><meta name="generator" content="Hexo 3.8.0">
     <meta charset="utf-8">
-<title>分类: C++心得 - 愉快的泡泡</title>
+<title>libevent源码剖析(9)--时间管理 - 愉快的泡泡</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
 
 
-    <meta name="description" content="个人学习心得，随笔">
-<meta property="og:type" content="website">
-<meta property="og:title" content="愉快的泡泡">
-<meta property="og:url" content="http://yoursite.com/categories/C-心得/index.html">
+    <meta name="description" content="为了支持定时器,Libevent 必须和系统时间打交道，这一部分的内容也比较简单，主要涉及到时间的加减辅助函数、时间缓存、时间校正和定时器堆的时间值调整等。下面就结合源代码来分析一下。">
+<meta name="keywords" content="网络编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libevent源码剖析(9)--时间管理">
+<meta property="og:url" content="http://yoursite.com/2019/05/12/libevent源码剖析-9-时间管理/index.html">
 <meta property="og:site_name" content="愉快的泡泡">
-<meta property="og:description" content="个人学习心得，随笔">
+<meta property="og:description" content="为了支持定时器,Libevent 必须和系统时间打交道，这一部分的内容也比较简单，主要涉及到时间的加减辅助函数、时间缓存、时间校正和定时器堆的时间值调整等。下面就结合源代码来分析一下。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/og_image.png">
+<meta property="og:updated_time" content="2019-05-12T07:31:35.422Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="愉快的泡泡">
-<meta name="twitter:description" content="个人学习心得，随笔">
+<meta name="twitter:title" content="libevent源码剖析(9)--时间管理">
+<meta name="twitter:description" content="为了支持定时器,Libevent 必须和系统时间打交道，这一部分的内容也比较简单，主要涉及到时间的加减辅助函数、时间缓存、时间校正和定时器堆的时间值调整等。下面就结合源代码来分析一下。">
 <meta name="twitter:image" content="http://yoursite.com/images/og_image.png">
 
 
@@ -103,7 +105,7 @@ var _hmt = _hmt || [];
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/冯泡泡.png" alt="愉快的泡泡" height="28">
+                <img src="/images/冯泡泡.png" alt="libevent源码剖析(9)--时间管理" height="28">
             
             </a>
         </div>
@@ -151,130 +153,149 @@ var _hmt = _hmt || [];
     <section class="section">
         <div class="container">
             <div class="columns">
-                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main"><div class="card">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-05-12T06:42:00.000Z">2019-05-12</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    10 分钟 读完 (大约 1475 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                libevent源码剖析(9)--时间管理
+            
+        </h1>
+        <div class="content">
+            <p>为了支持定时器,Libevent 必须和系统时间打交道，这一部分的内容也比较简单，主要涉及到时间的加减辅助函数、时间缓存、时间校正和定时器堆的时间值调整等。下面就结合源代码来分析一下。</p>
+<a id="more"></a>
+<h2 id="1、初始化检测"><a href="#1、初始化检测" class="headerlink" title="1、初始化检测"></a>1、初始化检测</h2><p>Libevent 在初始化时会检测系统时间的类型，通过调用函数 <strong>detect_monotonic()</strong> 完成,它通过调用<strong>clock_gettime()</strong>来检测系统是否支持 monotonic 时钟类型:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span></span><br><span class="line">detect_monotonic(<span class="hljs-keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">if</span> defined(HAVE_CLOCK_GETTIME) &amp;&amp; defined(CLOCK_MONOTONIC)</span></span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timespec</span>	<span class="hljs-title">ts</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (clock_gettime(CLOCK_MONOTONIC, &amp;ts) == <span class="hljs-number">0</span>)</span><br><span class="line">		use_monotonic = <span class="hljs-number">1</span>;    <span class="hljs-comment">//系统支持，monotonic时间</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Monotonic 时间指示的是系统从 boot 后到现在所经过的时间,如果系统支持 Monotonic时间就将全局变量 use_monotonic 设置为 1,设置 use_monotonic 到底有什么用,这个在后面说到时间校正时就能看出来了。</p>
+<h2 id="2、时间缓存"><a href="#2、时间缓存" class="headerlink" title="2、时间缓存"></a>2、时间缓存</h2><p>结构体 event_base 中的 tv_cache，用来记录时间缓存。这个还要从函数 gettime()说起，先来看看该函数的代码:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span></span><br><span class="line">gettime(struct event_base *base, struct timeval *tp)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-comment">//如果tv_cache时间缓存已设置，就直接使用</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (base-&gt;tv_cache.tv_sec) &#123;</span><br><span class="line">		*tp = base-&gt;tv_cache;</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//如果支持monotonic，就用clock_gettime获取monotonic时间</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">if</span> defined(HAVE_CLOCK_GETTIME) &amp;&amp; defined(CLOCK_MONOTONIC)</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (use_monotonic) &#123;</span><br><span class="line">		<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timespec</span>	<span class="hljs-title">ts</span>;</span></span><br><span class="line"></span><br><span class="line">		<span class="hljs-keyword">if</span> (clock_gettime(CLOCK_MONOTONIC, &amp;ts) == <span class="hljs-number">-1</span>)</span><br><span class="line">			<span class="hljs-keyword">return</span> (<span class="hljs-number">-1</span>);</span><br><span class="line"></span><br><span class="line">		tp-&gt;tv_sec = ts.tv_sec;</span><br><span class="line">		tp-&gt;tv_usec = ts.tv_nsec / <span class="hljs-number">1000</span>;</span><br><span class="line">		<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">	&#125;</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line">	<span class="hljs-comment">//否则只能取得系统当前时间</span></span><br><span class="line">	<span class="hljs-keyword">return</span> (evutil_gettimeofday(tp, <span class="hljs-literal">NULL</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果 tv_cache 已经设置，那么就直接使用缓存的时间；否则需要再次执行系统调用获取系统时间。</p>
+<p>函数 evutil_gettimeofday()用来获取当前系统时间，在 Linux 下其实就是系统调用<br>gettimeofday()；Windows 没有提供函数 gettimeofday，而是通过调用_ftime()来完成的。</p>
+<p>在每次系统事件循环中，时间缓存 tv_cache 将会被相应的清空和设置，再次来看看下面 event_base_loop 的主要代码逻辑:</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">event_base_loop</span><span class="hljs-params">(struct event_base *base, <span class="hljs-keyword">int</span> flags)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">	<span class="hljs-comment">// 清空时间缓存</span></span><br><span class="line">	base-&gt;tv_cache.tv_sec = <span class="hljs-number">0</span>;</span><br><span class="line">	<span class="hljs-keyword">while</span>(!done)&#123;</span><br><span class="line">		timeout_correct(base, &amp;tv); <span class="hljs-comment">// 时间校正</span></span><br><span class="line">		<span class="hljs-comment">// 更新event_tv到tv_cache指示的时间或者当前时间(第一次)</span></span><br><span class="line">		<span class="hljs-comment">// event_tv &lt;--- tv_cache</span></span><br><span class="line">		gettime(base, &amp;base-&gt;event_tv);</span><br><span class="line">		<span class="hljs-comment">// 清空时间缓存-- 时间点1</span></span><br><span class="line">		base-&gt;tv_cache.tv_sec = <span class="hljs-number">0</span>;</span><br><span class="line">		<span class="hljs-comment">// 等待I/O事件就绪</span></span><br><span class="line">		res = evsel-&gt;dispatch(base, evbase, tv_p);</span><br><span class="line">		<span class="hljs-comment">// 缓存tv_cache存储了当前时间的值-- 时间点2</span></span><br><span class="line">		<span class="hljs-comment">// tv_cache &lt;--- now</span></span><br><span class="line">		gettime(base, &amp;base-&gt;tv_cache);</span><br><span class="line">		<span class="hljs-comment">// .. 处理就绪事件</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="hljs-comment">// 退出时也要清空时间缓存</span></span><br><span class="line">	base-&gt;tv_cache.tv_sec = <span class="hljs-number">0</span>;</span><br><span class="line">	<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>时间 event_tv 指示了 dispatch()上次返回，也就是 I/O 事件就绪时的时间，第一次进入循环时,由于 tv_cache 被清空，因此 gettime()执行系统调用获取当前系统时间；而后将会更新为 tv_cache 指示的时间。</p>
+<p>时间 tv_cache 在 dispatch()返回后被设置为当前系统时间,因此它缓存了本次 I/O 事件就绪时的时间(event_tv)。</p>
+<p>从代码逻辑里可以看出 event_tv 取得的是 tv_cache 上一次的值，因此 event_tv 应该小于tv_cache 的值。</p>
+<p>设置时间缓存的优点是不必每次获取时间都执行系统调用，这是个相对费时的操作；在上面标注的时间点 2 到时间点 1 的这段时间(处理就绪事件时)，调用 gettime()取得的都是tv_cache 缓存的时间。</p>
+<h2 id="3、时间校正"><a href="#3、时间校正" class="headerlink" title="3、时间校正"></a>3、时间校正</h2><p>如果系统支持 monotonic 时间，该时间是系统从 boot 后到现在所经过的时间，因此不需要执行校正。</p>
+<p>根据前面的代码逻辑，如果系统不支持 monotonic 时间，用户可能会手动的调整时间，如果时间被向前调整了(MS 前面第 7 部分讲成了向后调整,要改正)，比如从 5 点调整到了 3 点,那么在时间点 2 取得的值可能会小于上次的时间，这就需要调整了，下面来看看校正的具体代码，由函数 timeout_correct()完成：</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span></span><br><span class="line">timeout_correct(struct event_base *base, struct timeval *tv)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">event</span> **<span class="hljs-title">pev</span>;</span></span><br><span class="line">	<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> size;</span><br><span class="line">	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timeval</span> <span class="hljs-title">off</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">if</span> (use_monotonic)   <span class="hljs-comment">//monotonic时间就直接返回，无需调整</span></span><br><span class="line">		<span class="hljs-keyword">return</span>;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/* Check if time is running backwards */</span></span><br><span class="line">	gettime(base, tv);  <span class="hljs-comment">//tv &lt;---tv_cache</span></span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">//如果tv &lt; event_tv表明用户向前调整时间了，需要校正时间</span></span><br><span class="line">	<span class="hljs-keyword">if</span> (evutil_timercmp(tv, &amp;base-&gt;event_tv, &gt;=)) &#123;</span><br><span class="line">		base-&gt;event_tv = *tv;</span><br><span class="line">		<span class="hljs-keyword">return</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	event_debug((<span class="hljs-string">"%s: time is running backwards, corrected"</span>,</span><br><span class="line">		    __func__));</span><br><span class="line">	</span><br><span class="line">	<span class="hljs-comment">//计算时间差值</span></span><br><span class="line">	evutil_timersub(&amp;base-&gt;event_tv, tv, &amp;off);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">	 * We can modify the key element of the node without destroying</span></span><br><span class="line"><span class="hljs-comment">	 * the key, beause we apply it to all in the right order.</span></span><br><span class="line"><span class="hljs-comment">	 */</span></span><br><span class="line">	<span class="hljs-comment">//调整定时事件小根堆</span></span><br><span class="line">	pev = base-&gt;timeheap.p;</span><br><span class="line">	size = base-&gt;timeheap.n;</span><br><span class="line">	<span class="hljs-keyword">for</span> (; size-- &gt; <span class="hljs-number">0</span>; ++pev) &#123;</span><br><span class="line">		<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">timeval</span> *<span class="hljs-title">ev_tv</span> = &amp;(**<span class="hljs-title">pev</span>).<span class="hljs-title">ev_timeout</span>;</span></span><br><span class="line">		evutil_timersub(ev_tv, &amp;off, ev_tv);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="hljs-comment">/* Now remember what the new time turned out to be. */</span></span><br><span class="line">	base-&gt;event_tv = *tv;  <span class="hljs-comment">//更新event_tv为tv_cache</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在调整小根堆时，因为所有定时事件的时间值都会被减去相同的值，因此虽然堆中元素的时间键值改变了，但是相对关系并没有改变，不会改变堆的整体结构。因此只需要遍历堆中的所有元素，将每个元素的时间键值减去相同的值即可完成调整，不需要重新调整堆的结构。</p>
+<p>当然调整完后，要将 event_tv 值重新设置为 tv_cache 值了。</p>
+<h2 id="4、小结"><a href="#4、小结" class="headerlink" title="4、小结"></a>4、小结</h2><p>主要分析了一下 libevent 对系统时间的处理，时间缓存、时间校正和定时堆的时间值调整等，逻辑还是很简单的,时间的加减、设置等辅助函数则非常简单，主要在头文件 evutil.h中，就不再多说了。</p>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/网络编程/">网络编程</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
     <div class="card-content">
-        <nav class="breadcrumb" aria-label="breadcrumbs">
-        <ul>
-            <li><a href="/categories">分类</a></li>
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
             
-            <li class="is-active"><a href="#" aria-current="page">C++心得</a></li>
-        </ul>
-        </nav>
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipay.jpg" alt="支付宝"></div>
+</a>
+
+                
+        </div>
     </div>
 </div>
 
-    <div class="card">
-    
-    <div class="card-content article ">
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
         
-        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
-            <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-03-18T06:43:00.000Z">2019-03-18</time>
-                
-                <div class="level-item">
-                <a class="has-link-grey -link" href="/categories/C-心得/">C++心得</a>
-                </div>
-                
-                
-                <span class="level-item has-text-grey">
-                    
-                    
-                    3 分钟 读完 (大约 512 个字)
-                </span>
-                
-                
-            </div>
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/05/10/I-O之同步、异步、阻塞、非阻塞/">
+                <span class="level-item">I/O之同步、异步、阻塞、非阻塞</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
         </div>
-        
-        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
-            
-                <a class="has-link-black-ter" href="/2019/03/18/多态原理探究/">多态原理探究</a>
-            
-        </h1>
-        <div class="content">
-            <h1 id="多态原理探究"><a href="#多态原理探究" class="headerlink" title="多态原理探究"></a>多态原理探究</h1><h2 id="1、多态的实现原理"><a href="#1、多态的实现原理" class="headerlink" title="1、多态的实现原理"></a>1、多态的实现原理</h2>
-        </div>
-        
-        
-        <div class="level is-mobile">
-            <div class="level-start">
-                <div class="level-item">
-                <a class="button is-size-7 is-light" href="/2019/03/18/多态原理探究/#more">阅读更多</a>
-                </div>
-            </div>
-        </div>
-        
         
     </div>
 </div>
 
 
 
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="lv-container" data-id="city" data-uid="MTAyMC80NDEzMi8yMDY2Nw==">
+    <script type="text/javascript">
+        (function(d, s) {
+            var j, e = d.getElementsByTagName(s)[0];
 
+            if (typeof LivereTower === 'function') { return; }
 
+            j = d.createElement(s);
+            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+            j.async = true;
 
+            e.parentNode.insertBefore(j, e);
+        })(document, 'script');
+    </script>
+    <noscript> Please activate JavaScript for write a comment in LiveRe</noscript>
+</div>
 
-
-    <div class="card">
-    
-    <div class="card-content article ">
-        
-        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
-            <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-03-17T01:32:00.000Z">2019-03-17</time>
-                
-                <div class="level-item">
-                <a class="has-link-grey -link" href="/categories/C-心得/">C++心得</a>
-                </div>
-                
-                
-                <span class="level-item has-text-grey">
-                    
-                    
-                    4 分钟 读完 (大约 632 个字)
-                </span>
-                
-                
-            </div>
-        </div>
-        
-        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
-            
-                <a class="has-link-black-ter" href="/2019/03/17/重载与重写/">重载与重写</a>
-            
-        </h1>
-        <div class="content">
-            <h1 id="重载与重写"><a href="#重载与重写" class="headerlink" title="重载与重写"></a>重载与重写</h1><pre><code>之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。
-</code></pre>
-        </div>
-        
-        
-        <div class="level is-mobile">
-            <div class="level-start">
-                <div class="level-item">
-                <a class="button is-size-7 is-light" href="/2019/03/17/重载与重写/#more">阅读更多</a>
-                </div>
-            </div>
-        </div>
-        
-        
     </div>
 </div>
-
-
-
-
-
-
-
-
 </div>
-                        <!-- 修改 -->
+                
+
+<!-- 粘贴的部分 -->
+                          <!-- 修改，可选保留的栏 -->
 
 
 
 
-<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left is-sticky">
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
     
         
 <div class="card widget">
@@ -641,191 +662,7 @@ var _hmt = _hmt || [];
 </div>
 
 
-<!-- 粘贴的部分 -->
-
-
-                        <!-- 修改 -->
-
-
-
-
-<div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right is-sticky">
-    
-        
-<div class="card widget">
-    <div class="card-content">
-        <h3 class="menu-label">
-            最新文章
-        </h3>
-        
-        <article class="media">
-            
-            <a href="/2019/05/12/libevent源码剖析-9-时间管理/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(9)--时间管理">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-12T06:42:00.000Z">2019-05-12</time></div>
-                    <a href="/2019/05/12/libevent源码剖析-9-时间管理/" class="has-link-black-ter is-size-6">libevent源码剖析(9)--时间管理</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/10/I-O之同步、异步、阻塞、非阻塞/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="I/O之同步、异步、阻塞、非阻塞">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T07:20:00.000Z">2019-05-10</time></div>
-                    <a href="/2019/05/10/I-O之同步、异步、阻塞、非阻塞/" class="has-link-black-ter is-size-6">I/O之同步、异步、阻塞、非阻塞</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(8)--支持I/O多路复用">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T02:23:00.000Z">2019-05-10</time></div>
-                    <a href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/" class="has-link-black-ter is-size-6">libevent源码剖析(8)--支持I/O多路复用</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(7)--集成定时器事件">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-10T01:24:00.000Z">2019-05-10</time></div>
-                    <a href="/2019/05/10/libevent源码剖析-7-集成定时器事件/" class="has-link-black-ter is-size-6">libevent源码剖析(7)--集成定时器事件</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="libevent源码剖析(6)--集成信号处理">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-09T13:39:00.000Z">2019-05-09</time></div>
-                    <a href="/2019/05/09/libevent源码剖析-6-集成信号处理/" class="has-link-black-ter is-size-6">libevent源码剖析(6)--集成信号处理</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-    </div>
-</div>
-
-    
-        <div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-        <h3 class="menu-label">
-            归档
-        </h3>
-        <ul class="menu-list">
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/05/">
-                <span class="level-start">
-                    <span class="level-item">五月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">10</span>
-                </span>
-            </a>
-        </li>
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/04/">
-                <span class="level-start">
-                    <span class="level-item">四月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">1</span>
-                </span>
-            </a>
-        </li>
-        
-        <li>
-            <a class="level is-marginless" href="/archives/2019/03/">
-                <span class="level-start">
-                    <span class="level-item">三月 2019</span>
-                </span>
-                <span class="level-end">
-                    <span class="level-item tag">3</span>
-                </span>
-            </a>
-        </li>
-        
-        </ul>
-        </div>
-    </div>
-</div>
-    
-        <div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-            <h3 class="menu-label">
-                标签
-            </h3>
-            <div class="field is-grouped is-grouped-multiline">
                 
-                <div class="control">
-                    <a class="tags has-addons" href="/tags/网络编程/">
-                        <span class="tag">网络编程</span>
-                        <span class="tag is-grey">11</span>
-                    </a>
-                </div>
-                
-            </div>
-        </div>
-    </div>
-</div>
-    
-    
-</div>
-
 
 <!-- 粘贴的部分 -->
 
@@ -839,7 +676,7 @@ var _hmt = _hmt || [];
             <div class="level-start has-text-centered-mobile">
                 <a class="footer-logo is-block has-mb-6" href="/">
                 
-                    <img src="/images/冯泡泡.png" alt="愉快的泡泡" height="28">
+                    <img src="/images/冯泡泡.png" alt="libevent源码剖析(9)--时间管理" height="28">
                 
                 </a>
                 <p class="is-size-7">
