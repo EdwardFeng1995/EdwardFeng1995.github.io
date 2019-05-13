@@ -99,21 +99,6 @@ var _hmt = _hmt || [];
 
 <link rel="stylesheet" href="/css/style.css">
 
-<script>
-(function(){
-    var bp = document.createElement('script');
-    var curProtocol = window.location.protocol.split(':')[0];
-    if (curProtocol === 'https') {
-        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
-    }
-    else {
-        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
-    }
-    var s = document.getElementsByTagName("script")[0];
-    s.parentNode.insertBefore(bp, s);
-})();
-</script>
-
 </head>
 <body class="is-3-column">
     <nav class="navbar navbar-main">
@@ -210,8 +195,8 @@ var _hmt = _hmt || [];
             
         </h1>
         <div class="content">
-            <h1 id="epoll反应堆模型"><a href="#epoll反应堆模型" class="headerlink" title="epoll反应堆模型"></a>epoll反应堆模型</h1><p>epoll是Linux下多路复用IO接口select/poll的增强版本，它能显著提高程序在大量并发连接中只有少量活跃的情况下的系统CPU利用率，因为它会复用文件描述符集合来传递结果而不用迫使开发者每次等待事件之前都必须重新准备要被侦听的文件描述符集合，另一点原因就是获取事件的时候，它无须遍历整个被侦听的描述符集，只要遍历那些被内核IO事件异步唤醒而加入Ready队列的描述符集合就行了。<br></p>
-        </div>
+            <h1 id="epoll反应堆模型"><a href="#epoll反应堆模型" class="headerlink" title="epoll反应堆模型"></a>epoll反应堆模型</h1><p>epoll是Linux下多路复用IO接口select/poll的增强版本，它能显著提高程序在大量并发连接中只有少量活跃的情况下的系统CPU利用率，因为它会复用文件描述符集合来传递结果而不用迫使开发者每次等待事件之前都必须重新准备要被侦听的文件描述符集合，另一点原因就是获取事件的时候，它无须遍历整个被侦听的描述符集，只要遍历那些被内核IO事件异步唤醒而加入Ready队列的描述符集合就行了。<br>
+        </p></div>
         
         
         <div class="level is-mobile">
@@ -904,6 +889,22 @@ var _hmt = _hmt || [];
                 } 
             setInterval("createtime()",250);
 </script>
+
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
 </div></footer>
 
 
