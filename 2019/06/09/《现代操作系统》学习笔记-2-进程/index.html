@@ -19,7 +19,7 @@
 <meta property="og:description" content="进程（1）进程本质上是正在执行的一个程序。 与每个进程相关的是地址空间， 该地址空间中存放有可执行程序、程序的数据以及程序的堆栈。进程基本上是容纳运行一个程序所需要所有信息的容器。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://edwardfeng1995.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2019-06-09T06:01:48.485Z">
+<meta property="og:updated_time" content="2019-06-09T07:30:45.607Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="《现代操作系统》学习笔记(2)--进程">
 <meta name="twitter:description" content="进程（1）进程本质上是正在执行的一个程序。 与每个进程相关的是地址空间， 该地址空间中存放有可执行程序、程序的数据以及程序的堆栈。进程基本上是容纳运行一个程序所需要所有信息的容器。">
@@ -192,7 +192,7 @@ var _hmt = _hmt || [];
 <p>（4）真正的CPU在各进程间来回切换，这种快速的切换称作多道程序设计。在下图中，每道程序有自己的逻辑计数器，当该程序运行时，它的逻辑计数器装入实际的程序计数器。<strong>在任何给定的瞬间仅有一个进程真正地运行。即使有两个核（或CPU），每一个核也只能一次运行一个进程。</strong></p>
 <p><img src="/images/pasted-31.png" alt="upload successful"></p>
 <p>（5）由于CPU在各进程之间来回快速切换，所以每个进程执行其运算的速度是不确定的。而且当同一进程再次运行时，其运算速度通常也不再可现。所以，<strong>在对进程编程时决不能对时序做任何想当然的假设。</strong></p>
-<p>（6）一个进程是某种类型的一个活动，它有程序、输入、输出以及状态。如果一个程序运行了两遍，则算作两个进程，操作系统能够使他们共享代码，因此只有一个副本放在内存中。</p>
+<p>（6）一个进程是某种类型的一个活动，它有程序、输入、输出以及状态。如果一个程序运行了两遍，则算作两个进程，操作系统能够使他们共享代码，因此<strong>只有一个副本放在内存中</strong>。</p>
 <p>（7）4种主要事件会导致进程的创建：</p>
 <ul>
 <li>系统初始化</li>
