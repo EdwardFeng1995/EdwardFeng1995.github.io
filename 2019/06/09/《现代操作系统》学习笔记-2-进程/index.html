@@ -10,19 +10,19 @@
 
 
 
-    <meta name="description" content="进程（1）进程本质上是正在执行的一个程序。 与每个进程相关的是地址空间， 该地址空间中存放有可执行程序、程序的数据以及程序的堆栈。进程基本上是容纳运行一个程序所需要所有信息的容器。 （2）严格地说，在某一瞬间，CPU只能运行一个进程。 （3）一个进程就是一个正在执行的实例，包括程序计数器、寄存器和变量的当前值。 （4）真正的CPU在各进程间来回切换，这种快速的切换称作多道程序设计。在下图中，每道程">
+    <meta name="description" content="进程（1）进程本质上是正在执行的一个程序。 与每个进程相关的是地址空间， 该地址空间中存放有可执行程序、程序的数据以及程序的堆栈。进程基本上是容纳运行一个程序所需要所有信息的容器。">
 <meta name="keywords" content="操作系统">
 <meta property="og:type" content="article">
 <meta property="og:title" content="《现代操作系统》学习笔记(2)--进程">
 <meta property="og:url" content="https://edwardfeng1995.github.io/2019/06/09/《现代操作系统》学习笔记-2-进程/index.html">
 <meta property="og:site_name" content="冯泡泡的博客">
-<meta property="og:description" content="进程（1）进程本质上是正在执行的一个程序。 与每个进程相关的是地址空间， 该地址空间中存放有可执行程序、程序的数据以及程序的堆栈。进程基本上是容纳运行一个程序所需要所有信息的容器。 （2）严格地说，在某一瞬间，CPU只能运行一个进程。 （3）一个进程就是一个正在执行的实例，包括程序计数器、寄存器和变量的当前值。 （4）真正的CPU在各进程间来回切换，这种快速的切换称作多道程序设计。在下图中，每道程">
+<meta property="og:description" content="进程（1）进程本质上是正在执行的一个程序。 与每个进程相关的是地址空间， 该地址空间中存放有可执行程序、程序的数据以及程序的堆栈。进程基本上是容纳运行一个程序所需要所有信息的容器。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://edwardfeng1995.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2019-06-09T05:51:45.252Z">
+<meta property="og:updated_time" content="2019-06-09T06:01:48.485Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="《现代操作系统》学习笔记(2)--进程">
-<meta name="twitter:description" content="进程（1）进程本质上是正在执行的一个程序。 与每个进程相关的是地址空间， 该地址空间中存放有可执行程序、程序的数据以及程序的堆栈。进程基本上是容纳运行一个程序所需要所有信息的容器。 （2）严格地说，在某一瞬间，CPU只能运行一个进程。 （3）一个进程就是一个正在执行的实例，包括程序计数器、寄存器和变量的当前值。 （4）真正的CPU在各进程间来回切换，这种快速的切换称作多道程序设计。在下图中，每道程">
+<meta name="twitter:description" content="进程（1）进程本质上是正在执行的一个程序。 与每个进程相关的是地址空间， 该地址空间中存放有可执行程序、程序的数据以及程序的堆栈。进程基本上是容纳运行一个程序所需要所有信息的容器。">
 <meta name="twitter:image" content="https://edwardfeng1995.github.io/images/og_image.png">
 
 
@@ -172,7 +172,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    8 分钟 读完 (大约 1225 个字)
+                    8 分钟 读完 (大约 1226 个字)
                 </span>
                 
                 
@@ -186,6 +186,7 @@ var _hmt = _hmt || [];
         </h1>
         <div class="content">
             <h3 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h3><p>（1）<strong>进程本质上是正在执行的一个程序。</strong> 与每个进程相关的是地址空间， 该地址空间中存放有可执行程序、程序的数据以及程序的堆栈。进程基本上是容纳运行一个程序所需要所有信息的容器。</p>
+<a id="more"></a>
 <p>（2）严格地说，在某一瞬间，CPU只能运行一个进程。</p>
 <p>（3）一个进程就是<strong>一个正在执行的实例</strong>，包括程序计数器、寄存器和变量的当前值。</p>
 <p>（4）真正的CPU在各进程间来回切换，这种快速的切换称作多道程序设计。在下图中，每道程序有自己的逻辑计数器，当该程序运行时，它的逻辑计数器装入实际的程序计数器。<strong>在任何给定的瞬间仅有一个进程真正地运行。即使有两个核（或CPU），每一个核也只能一次运行一个进程。</strong></p>
