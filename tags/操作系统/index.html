@@ -181,7 +181,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    9 分钟 读完 (大约 1416 个字)
+                    9 分钟 读完 (大约 1417 个字)
                 </span>
                 
                 
@@ -200,50 +200,16 @@ var _hmt = _hmt || [];
 <li>确保两个或更多的进程在关键活动中不会出现交叉。</li>
 <li>第三个问题与正确的顺序有关（如果该顺序是有关联的话）。</li>
 </ul>
-<p>下面讨论进程剑通信问题，（1）-（7）针对的是共享内存，（8）是消息传递系统</p>
-<h5 id="（1）竞态条件"><a href="#（1）竞态条件" class="headerlink" title="（1）竞态条件"></a><strong>（1）竞态条件</strong></h5><p>在一些操作系统中，<strong>协作的进程可能共享一些彼此都能读写公用存储区</strong>，这个存储区可能在内存中（可能是在内核数据结构中），也可能是一个共享文件。</p>
-<p>两个或多个进程读写某些共享进程，而最后的结果取决于进程运行的精确时序，称为<strong>竞态条件</strong>。</p>
-<h5 id="（2）临界区"><a href="#（2）临界区" class="headerlink" title="（2）临界区"></a><strong>（2）临界区</strong></h5><p><strong>互斥</strong>：以某种手段确保当一个进程在使用一个共享变量或文件时，其他进程不能做同样的操作。</p>
-<p><strong>临界区</strong>：对共享内存进行访问的程序片段。</p>
-<p>对于一个好的解决方案，需要满足以下4个条件：</p>
-<ul>
-<li>任何两个进程不能处于其临界区。</li>
-<li>不应对CPU的速度和数量做任何假设。</li>
-<li>临界区外运行的进程不得阻塞其他进程。</li>
-<li>不得使进程无限期等待进入临界区。</li>
-</ul>
-<p><img src="/images/pasted-46.png" alt="4-1"></p>
-<h5 id="（3）忙等待的互斥"><a href="#（3）忙等待的互斥" class="headerlink" title="（3）忙等待的互斥"></a><strong>（3）忙等待的互斥</strong></h5><p>几种实现互斥的方案：</p>
-<ul>
-<li><strong>A.屏蔽中断</strong><br>屏蔽中断对于操作系统本身而言是一项很有用的技术，但对于用户进程则不是一种合适的通用互斥机制。</li>
-<li><strong>B.锁变量</strong></li>
-<li><strong>C.严格轮换法</strong><br>连续测试一个变量直到某个值出现为止，称为忙等待，用于忙等待的锁称为自旋锁。一个进程比另一个进程慢很多的时候，进程被临界区之外的进程阻塞。</li>
-<li><strong>D.Peterson解法</strong></li>
-<li><strong>E.TSL指令</strong></li>
-</ul>
-<h5 id="（4）睡眠与唤醒"><a href="#（4）睡眠与唤醒" class="headerlink" title="（4）睡眠与唤醒"></a><strong>（4）睡眠与唤醒</strong></h5><p><strong>生产者-消费者模型（有界缓冲区）：</strong> 两个进程共享一个固定大小的缓冲区，一个是生产则，将信息放入缓冲区；另一个是消费者，从缓冲区取出信息。</p>
-<h5 id="（5）信号量"><a href="#（5）信号量" class="headerlink" title="（5）信号量"></a><strong>（5）信号量</strong></h5><p>进化版的互斥量mutex，两个操作 ，<strong>P（down）和V（up）操作</strong>。在进入临界区前，执行P操作，信号量减1；在离开临界区前，执行V操作，信号量加1。<br>操作信号量是<strong>原子操作</strong>，是指一组相关联的操作要么不间断地执行，要么都不执行。</p>
-<h5 id="6）互斥量"><a href="#6）互斥量" class="headerlink" title="(6）互斥量"></a><strong>(6）互斥量</strong></h5><p>信号量的一个简化版本，可以处于两态：解锁和加锁。当一个线程（或进程）需要访问临界区时，它调用mutex_lock。</p>
-<p><strong>如果该互斥量已经加锁，调用线程被阻塞，直到在临界区中的线程完成并调用mutex_unlock。如果多个线程被阻塞在互斥量上，将随机选择一个线程并允许它获得锁。</strong></p>
-<p><strong>互斥量和自旋锁的区别（阻塞对比忙等待）：</strong><br>使用互斥量时，互斥量已加锁，<strong>调用线程会被阻塞，然后调用thread_yield将CPU释放给另一个线程。</strong></p>
-<p>使用自旋锁，在获取锁之前一直处于<strong>忙等待（自旋），一直占用CPU，如果，短时间内无法获得锁，则会造成CPU浪费。</strong></p>
-<p>所以，自旋锁适用于：<strong>锁被持有的时间短，并且线程并不希望在重新调度上花费太多的成本。</strong> 而使用互斥量阻塞时，不会浪费CPU，但是阻塞后重新调用会花费成本。</p>
-<ul>
-<li><strong>a.快速用户区互斥量futex</strong></li>
-<li><p><strong>b.pthread中的互斥量</strong></p>
-<p>  pthread提供了互斥量操作，还提供了<strong>条件变量</strong>。条件变量允许线程由于一些未达到的条件而阻塞，一般和互斥量一起使用。（生产者拿到锁以后，发现缓冲区满的，利用条件变量，等待消费者消费，线程阻塞，当消费者消费后，唤醒自己）。</p>
-<p>  <img src="/images/pasted-47.png" alt="4-2"><br>  <strong>pthread_cond_wait</strong>原子性地调用并解锁它持有的互斥量。以下是互斥量与条件变量一起使用的生产者-消费者模型。</p>
-<p>  <img src="/images/pasted-48.png" alt="4-3"></p>
-</li>
-</ul>
-<h5 id="（7）管程"><a href="#（7）管程" class="headerlink" title="（7）管程"></a><strong>（7）管程</strong></h5><p>一个管程是一个由过程、变量及数据结构等组成的一个集合，他们组成一个特殊的模块或软件包。<strong>管程是语言概念，JAVA支持</strong>。管程有一个很重要的特性，即任一时刻管程中只能有一个活跃进程，这一特性使管程能够有效地完成互斥。</p>
-<h5 id="（8）消息传递"><a href="#（8）消息传递" class="headerlink" title="（8）消息传递"></a><strong>（8）消息传递</strong></h5><p>这种进程间通信的方法使用两条原语send和receive，它们像信号量而不像管程，是系统调用而不是语言成分。</p>
-<h5 id="（9）屏障"><a href="#（9）屏障" class="headerlink" title="（9）屏障"></a><strong>（9）屏障</strong></h5><p>当一个进程到达屏障时，它就被阻拦，直到所有进程都到达该屏障。屏障可用于一组进程同步。</p>
-<p><img src="/images/pasted-49.png" alt="4-4"></p>
-<h4 id="（10）避免锁：读-复制-更新"><a href="#（10）避免锁：读-复制-更新" class="headerlink" title="（10）避免锁：读-复制-更新"></a><strong>（10）避免锁：读-复制-更新</strong></h4><p><img src="/images/pasted-50.png" alt="4-5"></p>
-
         </div>
         
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2019/06/15/《现代操作系统》学习笔记-4-进程间通信/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
         
         
     </div>
