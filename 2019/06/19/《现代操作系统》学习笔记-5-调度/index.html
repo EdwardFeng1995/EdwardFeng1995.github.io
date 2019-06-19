@@ -5,24 +5,24 @@
     <meta name="baidu-site-verification" content="N3g7rXsOdw">
 <meta name="baidu-site-verification" content="KOiSXH19Wh">
 <meta charset="utf-8">
-<title>I/O之同步、异步、阻塞、非阻塞 - 冯泡泡的博客</title>
+<title>《现代操作系统》学习笔记(5)--调度 - 冯泡泡的博客</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
 
 
-    <meta name="description" content="今天在看到 Libevent 的核心是事件驱动、同步非阻塞 这句话时，突然产生了疑惑，libevent是同步的吗？，一直以为是异步的，然后开始搜索资料，发现众说纷纭，有人说是异步，有人说是同步。答案是同步。。">
-<meta name="keywords" content="网络编程">
+    <meta name="description" content="4、调度多个进程或线程同时竞争cpu。完成选择工作的称为调度程序，该程序使用的算法称为调度算法。">
+<meta name="keywords" content="操作系统">
 <meta property="og:type" content="article">
-<meta property="og:title" content="I&#x2F;O之同步、异步、阻塞、非阻塞">
-<meta property="og:url" content="https://edwardfeng1995.github.io/2019/05/10/I-O之同步、异步、阻塞、非阻塞/index.html">
+<meta property="og:title" content="《现代操作系统》学习笔记(5)--调度">
+<meta property="og:url" content="https://edwardfeng1995.github.io/2019/06/19/《现代操作系统》学习笔记-5-调度/index.html">
 <meta property="og:site_name" content="冯泡泡的博客">
-<meta property="og:description" content="今天在看到 Libevent 的核心是事件驱动、同步非阻塞 这句话时，突然产生了疑惑，libevent是同步的吗？，一直以为是异步的，然后开始搜索资料，发现众说纷纭，有人说是异步，有人说是同步。答案是同步。。">
+<meta property="og:description" content="4、调度多个进程或线程同时竞争cpu。完成选择工作的称为调度程序，该程序使用的算法称为调度算法。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://edwardfeng1995.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2019-05-19T07:09:38.863Z">
+<meta property="og:updated_time" content="2019-06-19T08:06:33.680Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="I&#x2F;O之同步、异步、阻塞、非阻塞">
-<meta name="twitter:description" content="今天在看到 Libevent 的核心是事件驱动、同步非阻塞 这句话时，突然产生了疑惑，libevent是同步的吗？，一直以为是异步的，然后开始搜索资料，发现众说纷纭，有人说是异步，有人说是同步。答案是同步。。">
+<meta name="twitter:title" content="《现代操作系统》学习笔记(5)--调度">
+<meta name="twitter:description" content="4、调度多个进程或线程同时竞争cpu。完成选择工作的称为调度程序，该程序使用的算法称为调度算法。">
 <meta name="twitter:image" content="https://edwardfeng1995.github.io/images/og_image.png">
 
 
@@ -108,7 +108,7 @@ var _hmt = _hmt || [];
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/冯泡泡.png" alt="I/O之同步、异步、阻塞、非阻塞" height="28">
+                <img src="/images/冯泡泡.png" alt="《现代操作系统》学习笔记(5)--调度" height="28">
             
             </a>
         </div>
@@ -162,7 +162,7 @@ var _hmt = _hmt || [];
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-05-10T07:20:00.000Z">2019-05-10</time>
+                <time class="level-item has-text-grey" datetime="2019-06-19T07:55:00.000Z">2019-06-19</time>
                 
                 <div class="level-item">
                 <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
@@ -172,7 +172,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    19 分钟 读完 (大约 2924 个字)
+                    15 分钟 读完 (大约 2218 个字)
                 </span>
                 
                 
@@ -181,105 +181,72 @@ var _hmt = _hmt || [];
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                I/O之同步、异步、阻塞、非阻塞
+                《现代操作系统》学习笔记(5)--调度
             
         </h1>
         <div class="content">
-            <p>今天在看到 <font color="#0099ff"><strong>Libevent 的核心是事件驱动、同步非阻塞</strong></font> 这句话时，突然产生了疑惑，<strong>libevent是同步的吗？</strong>，一直以为是异步的，然后开始搜索资料，发现众说纷纭，有人说是异步，有人说是同步。答案是同步。。</p>
-<a id="more"></a>
-<p>之所以产生疑惑，根本原因是自己对同步、异步以及阻塞、非阻塞理解的不够透彻。</p>
-<p>通过查找网上的资料发现，关于<font color="#0099ff"><strong>同步/异步，阻塞/非阻塞</strong></font>的解释有各种各样的版本，有各种各样的理解，搞得自己也有点懵，所以还是以比较权威的<strong> W.Richard Stevens的UNP 6.2 I/O模型 </strong>来理解。</p>
-<p>书中介绍了在Unix下可用的5中I/O模型，分别是：</p>
+            <h3 id="4、调度"><a href="#4、调度" class="headerlink" title="4、调度"></a><strong>4、调度</strong></h3><p>多个进程或线程同时竞争cpu。完成选择工作的称为<strong>调度程序</strong>，该程序使用的算法称为调度算法。<br><a id="more"></a></p>
+<h4 id="1-调度简介"><a href="#1-调度简介" class="headerlink" title="1.调度简介"></a><strong>1.调度简介</strong></h4><h5 id="1-进程行为"><a href="#1-进程行为" class="headerlink" title="(1)进程行为"></a><strong>(1)进程行为</strong></h5><p>几乎所有进程的（磁盘或网络）I/O请求和 计算都是交替突发的。某些I/O活动可以看作计算。<strong>当一个进程等待外部设备完成工作而被阻塞时，才是I/O活动</strong></p>
+<p><img src="/images/pasted-51.png" alt="5-1"></p>
+<p>某些进程花费大多数时间在计算上，称为<strong>计算密集型</strong>。某些进程花费大多数时间在等待I/O上，称为<strong>I/O密集型</strong>。</p>
+<p>随着cpu变得越来越快，更多的进程倾向为I/O密集型。如果需要运行I/O密集型进程，你那么就应该让它尽快得到机会，以便发出磁盘请求并保持磁盘始终忙碌。<strong>如果进程是I/O密集型的，则需要多运行一些这类进程以保持cpu的充分利用。</strong></p>
+<h5 id="2-何时调度"><a href="#2-何时调度" class="headerlink" title="(2)何时调度"></a><strong>(2)何时调度</strong></h5><p>有关调度处理的一个关键问题是<strong>何时进行调度决策</strong></p>
 <ul>
-<li><p>阻塞式I/O</p>
+<li><p>第一，在创建一个新进程后，需要决定是运行父进程还是运行子进程。</p>
 </li>
-<li><p>非阻塞式I/O</p>
+<li><p>第二，在一个进程退出时必须做出调度决策。</p>
 </li>
-<li><p>I/O复用（select和poll）</p>
+<li><p>第三，当一个进程阻塞在I/O和信号量上或由于其他原因阻塞时，必须选择另一个进程运行。</p>
 </li>
-<li><p>信号驱动式I/O（SIGIO）</p>
-</li>
-<li><p>异步I/O（POSIX的aio_系列函数）</p>
+<li><p>第四，在一个I/O中断发生时，必须做出调度决策。</p>
 </li>
 </ul>
-<p>一个输入操作通常包括两个不同的阶段：</p>
+<p>根据如何处理时钟中断，可以把调度算法分为两类：</p>
 <ul>
-<li><font color="#0099ff">(1)等待数据准备好</font>
-
-
-</li>
+<li><strong>非抢占式：</strong>该调度算法挑选一个进程，然后让其运行至被阻塞，或者直到自动释放CPU。<strong>在时钟中断发生时不会不会进行调度。</strong></li>
+<li><strong>抢占式：</strong>该调度算法挑选一个进程，让其运行某个固定时段的最大值。如果该时段结束时，进程仍在运行，则挂起，调度程序挑选另一个进程运行。</li>
 </ul>
+<h5 id="3-调度算法分类"><a href="#3-调度算法分类" class="headerlink" title="(3)调度算法分类"></a><strong>(3)调度算法分类</strong></h5><p>不同环境需要不同的调度算法：</p>
 <ul>
-<li><font color="#0099ff">(2)从内核向进程复制数据</font>
-
-</li>
+<li><strong>批处理：</strong>在商业领域广泛应用。可以用非抢占式算法，或对每个进程都有长时间周期的抢占式算法。这种处理方式减少了进程的切换从而改善了性能。</li>
+<li><strong>交互式：</strong>为避免一个进程霸占CPU拒绝为其他进程服务，抢占是必须的。服务器也一样。</li>
+<li><strong>实时：</strong>抢占有时不是必需的，因为进程了解它们可能会长时间得不到运行。实时系统只运行哪些用来推进现有应用的程序，而交互式系统是通用的，它可以运行任意非协作甚至是有而已的程序。</li>
 </ul>
-<p>对于一个套接字上的输入操作，第一步<strong>通常涉及等待数据从网络中到达</strong>。当所等待分组到达时，它被复制到内核中的某个缓冲区。第二步就是<strong>把数据从内核缓冲区复制到应用进程缓冲区</strong>。</p>
-<h2 id="阻塞式I-O模型"><a href="#阻塞式I-O模型" class="headerlink" title="阻塞式I/O模型"></a>阻塞式I/O模型</h2><p>默认情形下，所有套接字都是阻塞的。。以数据报套接字作为例子，如下图所示：</p>
-<p><img src="/images/pasted-21.png" alt="upload successful"></p>
-<p>在上图中，进程调用recvfrom，其<font color="#ff0ff0"><strong>系统调用直到数据报到达且被复制到应用进程的缓冲区中或者发生错误才返回</strong></font>。最常见的错误是系统调用被信号中断。这里，<font color="#f00ff0"><strong>进程在从调用recvfrom开始到它返回的整段时间内是被阻塞的</strong></font>。recvfrom成功返回后，应用进程开始处理数据报。</p>
-<h2 id="非阻塞I-O模型"><a href="#非阻塞I-O模型" class="headerlink" title="非阻塞I/O模型"></a>非阻塞I/O模型</h2><p>套接字的默认状态是阻塞的。这就意味着当发出一个不能立即完成的套接字调用时，其进程将被投入睡眠，等待相应操作完成。进程把一个套接字设置称非阻塞是在通知内核：<font color="#ff0ff0"><strong>当所请求的I/O操作非得把本进程投入睡眠才能完成时，而是返回一个错误</strong></font>。</p>
-<p>看下图的例子：</p>
-<p><img src="/images/pasted-22.png" alt="upload successful"></p>
-<p>前三次调用recvfrom时没有数据可返回，因此内核转而立即返回一个EWOULDBLOCK错误。第四次调用recvfrom时已有一个数据报准备好，它被复制到应用进程缓冲区，于是recvfrom成功返回。接着处理数据。</p>
-<p>当一个应用进程像这样一个非阻塞描述符循环调用recvfrom时，我们称之为轮询(polling)。应用进程持续轮询内核，以查看某个操作是否就绪。这么做往往消耗大量CPU时间，不过这种模型偶尔也会遇到，通常是在专门提供某一种功能的系统中才有。</p>
-<h2 id="I-O复用模型"><a href="#I-O复用模型" class="headerlink" title="I/O复用模型"></a>I/O复用模型</h2><p>有了I/O复用模型，我们就可以<font color="#0099ff">调用select或poll，阻塞在这两个系统调用中的某一个之上，而不是阻塞在真正的I/O系统调用上</font>。下图概括展示了I/O复用模型。</p>
-<p><img src="/images/pasted-23.png" alt="upload successful"></p>
-<p>阻塞于select调用，等待数据报套接字变为可读。当select返回套接字可读这一条件时，我们调用recvfrom把所读数据报复制到进程缓冲区。</p>
-<p>比较图6-3和6-1，I/O复用并不显得有说明优势，事实上由于使用select需要两个而不是单个系统调用，I/O复用还稍显劣势。但是，使用<strong>select的优势在于可以等待多个描述符就绪</strong>。</p>
-<h2 id="信号驱动式I-O模型"><a href="#信号驱动式I-O模型" class="headerlink" title="信号驱动式I/O模型"></a>信号驱动式I/O模型</h2><p>此外，还可以用信号，让内核在描述符就绪时发送SIGIO信号通知我们。我们称这种模型为信号驱动式I/O模型，下图是它的概要展示。</p>
-<p><img src="/images/pasted-24.png" alt="upload successful"></p>
-<p>我们首先开启套接字的信号驱动式I/O工呢，并通过sigaction系统调用安装一个信号处理函数。该系统调用立即返回，我们进程继续工作，也就是说它没有被阻塞。当数据报准备好读取时，内核九尾该进程产生一个SIGIO信号。我们随后既可以在信号处理函数中调用recvfrom读取数据报，并通知主循环数据已准备好待处理，也可以立即通知主循环，让它读书数据报。</p>
-<p>无论如何处理SIGIO信号，<strong>这种模型的优势在于等待数据报到达期间进程不被阻塞。主循环可以继续执行，只要等待来自信号处理函数的通知：既可以是数据已准备好被处理，也可以是数据已准备好被读取</strong>。</p>
-<h2 id="异步I-O模型"><a href="#异步I-O模型" class="headerlink" title="异步I/O模型"></a>异步I/O模型</h2><p>工作机制是：<strong>告知内核启动某个操作，并让内核在整个操作（包括将数据从内核复制到我们自己的缓冲区）完成后通知我们</strong>。这种模型与信号驱动模型的主要区别在于：<strong>信号驱动式I/O是由内核通知我们何时可以启动一个I/O操作，而异步I/O模型是由内核通知我们I/O操作何时完成 </strong>。</p>
-<p>看下图例子。</p>
-<p><img src="/images/pasted-25.png" alt="upload successful"></p>
-<p>我们调用aio_read函数，给内核传递描述符、缓冲区指针、缓冲区大小和文件偏移，并告诉内核当整个操作完成时何时通知我们。系统调用立即返回，而且在等待I/O完成期间，我们进程不被阻塞。本例中我们假设要求内核在操作完成时产生某个信号。该信号直到数据已复制到应用进程缓冲区才产生，这一点不同于信号驱动式I/O模型。</p>
-<h2 id="各种I-O模型的比较"><a href="#各种I-O模型的比较" class="headerlink" title="各种I/O模型的比较"></a>各种I/O模型的比较</h2><p>下图对比了上述五种不同的I/O模型。</p>
-<p><img src="/images/pasted-26.png" alt="upload successful"></p>
-<p>可以看出，前4种模型的主要区别在于第一阶段，因为它们的第二阶段是一样的：<strong>在数据从内核复制到调用者的缓冲区期间，进程阻塞于recvfrom调用。相反，异步I/O模型在这两个阶段都要处理，进程不需要阻塞，从而不同于其他4种模型。</strong></p>
-<h3 id="同步I-O和异步I-O对比"><a href="#同步I-O和异步I-O对比" class="headerlink" title="同步I/O和异步I/O对比"></a>同步I/O和异步I/O对比</h3><p>POSIX 把这两个术语定义如下：</p>
-<ul>
-<li><p>同步I/O操作：导致请求进程阻塞，直到I/O操作完成</p>
-</li>
-<li><p>异步I/O操作：不导致请求进程阻塞</p>
-</li>
-</ul>
-<p>所以，根据上述定义，前4种模型：<font color="#0099ff">阻塞式I/O模型、非阻塞I/O模型、I/O复用模型、信号驱动式I/O模型都是同步I/O模型</font>，因为其中真正的I/O操作（recvfrom）将进程阻塞。只有异步I/O模型与POSIX定义的异步I/O相匹配。</p>
-<p>此外，在知乎上，陈硕大佬给出了这样的解答</p>
-<p><img src="/images/pasted-27.png" alt="upload successful"></p>
-<p>所以，最后我理解的是</p>
-<ul>
-<li><p>同步/异步的区别主要在于第二阶段，即将数据从内核复制到用户空间这一阶段。同步需要主动去读写数据，在读写的系统调用过程中，是阻塞的。而异步只需要I/O操作完成的通知，并不主动读写数据，由操作系统内核完成数据的读写，在这个过程中进程不阻塞。</p>
-</li>
-<li><p>阻塞/非阻塞，如果是阻塞，进程在发起系统调用后，在调用返回之前，进程会被挂起，等待返回结果；如果是非阻塞，调用会立即返回一个状态值，进程不需要挂起，不需要等待，这就是非阻塞，如果进程时不时去查看是否有结果，就是轮询。</p>
-</li>
-</ul>
-<p>在清楚了同步、异步、阻塞、非阻塞的概念和区别后，再来看Reactor模型，其读操作的具体步骤如下：</p>
-<ol>
-<li><p>应用程序注册读就绪事件和相关联的事件处理器</p>
-</li>
-<li><p>事件分离器等待事件的发生</p>
-</li>
-<li><p>当发生读就绪事件的时候，事件分离器调用第一步注册的事件处理器</p>
-</li>
-<li><p>事件处理器首先执行实际的读取操作，然后根据读取到的内容进行进一步的处理</p>
-</li>
-</ol>
-<p>当读就绪事件发生时，事件处理器会主动执行读取操作，所以Reactor是同步的。</p>
-<p>此外还有一种异步I/O模型，就是Proactor模型，其读取操作步骤如下：</p>
-<ol>
-<li><p>应用程序初始化一个异步读取操作，然后注册相应的事件处理器，此时事件处理器不关注读取就绪事件，而是关注读取完成事件，这是区别于Reactor的关键。</p>
-</li>
-<li><p>事件分离器等待读取操作完成事件</p>
-</li>
-<li><p>在事件分离器等待读取操作完成的时候，操作系统调用内核线程完成读取操作（异步IO都是操作系统负责将数据读写到应用传递进来的缓冲区供应用程序操作，操作系统扮演了重要角色），并将读取的内容放入用户传递过来的缓存区中。这也是区别于Reactor的一点，Proactor中，应用程序需要传递缓存区。</p>
-</li>
-<li><p>事件分离器捕获到读取完成事件后，激活应用程序注册的事件处理器，事件处理器直接从缓存区读取数据，而不需要进行实际的读取操作。</p>
-</li>
-</ol>
-<p>可以清楚地看到两者的区别，<strong>Reactor和Proactor模式的主要区别就是真正的读取和写入操作是有谁来完成的，Reactor中需要应用程序自己读取或者写入数据，而Proactor模式中，应用程序不需要进行实际的读写过程，它只需要从缓存区读取或者写入即可，操作系统会读取缓存区或者写入缓存区到真正的IO设备</strong>。</p>
-<p>最后Libevent的核心就是Reactor模型，再看libevent的底层代码，实际仍然是<strong>一个while循环，调用epoll或者select去监听event是否准备就绪，事件准备就绪后，事件处理器还是会主动去执行需要的操作，例如读事件，是要主动去读取数据</strong>，所以，这样看libevent是同步的。</p>
+<h5 id="4-调度算法的目标"><a href="#4-调度算法的目标" class="headerlink" title="(4)调度算法的目标"></a><strong>(4)调度算法的目标</strong></h5><p><img src="/images/pasted-52.png" alt="5-2"></p>
+<p>在以上情况中，公平是最重要的。与公平有关的是系统策略的强制执行。</p>
+<p>另一个共同的目标是保持系统的所有部分尽可能忙碌。</p>
+<p>对于批处理系统：CPU并不是一个很好的度量参数，真正有价值的是，吞吐量和周转时间。</p>
+<p>对于交互式系统：最重要的是<strong>最小响应事件。</strong></p>
+<p>对于实时系统：或多或少必须满足截止时间。</p>
+<h4 id="2-批处理系统中的调度"><a href="#2-批处理系统中的调度" class="headerlink" title="2.批处理系统中的调度"></a><strong>2.批处理系统中的调度</strong></h4><h5 id="1-先来先服务"><a href="#1-先来先服务" class="headerlink" title="(1)先来先服务"></a><strong>(1)先来先服务</strong></h5><h5 id="2-最短作业优先"><a href="#2-最短作业优先" class="headerlink" title="(2)最短作业优先"></a><strong>(2)最短作业优先</strong></h5><p>该算法适用于运行时间可以预知的另一个非抢占式的批处理调度算法。</p>
+<p><img src="/images/pasted-53.png" alt="5-3"></p>
+<p>如上图，a的平均周转时间为14分钟，b的平均周转时间为11分钟。只有在所有的作业都可同时到来的情况下，最短作业优先才是最优化的。</p>
+<h5 id="3-最短剩余时间优先"><a href="#3-最短剩余时间优先" class="headerlink" title="(3)最短剩余时间优先"></a><strong>(3)最短剩余时间优先</strong></h5><p>该算法是最短作业优先的<strong>抢占式</strong>版本，选择剩余运行时间最短的那个进程，如果有新的进程比当前进程需要更少的时间，当前进程就挂起，运行新进程。</p>
+<h4 id="3-交互式系统中的调度"><a href="#3-交互式系统中的调度" class="headerlink" title="3.交互式系统中的调度"></a><strong>3.交互式系统中的调度</strong></h4><h5 id="1-轮转调度-round-robin"><a href="#1-轮转调度-round-robin" class="headerlink" title="(1)轮转调度(round robin)"></a><strong>(1)轮转调度(round robin)</strong></h5><p>每个进程被分配一个时间段，称为时间片，即允许该进程在该时间段中运行。调度程序所要做的就是维护一张可运行进程列表。</p>
+<p><img src="/images/pasted-54.png" alt="5-4"></p>
+<p>从一个进程切换到另一个进程是需要一定时间进行管理事务处理——保存和装入寄存器值及内存影响，更新</p>
+<p>各种表格和列表、清除和重新调入内存告诉缓存等。</p>
+<p><strong>进程切换</strong>也称为<strong>上下文切换</strong>。</p>
+<p><strong>时间片设得太短会导致过多的进程切换，降低了CPU效率；而设得太长又可能引起对短的交互请求的响应时间变长。将时间片设为20~50ms通常是一个比较合理的折中。</strong></p>
+<p>轮转调度假设所有的进程同等重要。</p>
+<h5 id="2-优先级调度"><a href="#2-优先级调度" class="headerlink" title="(2)优先级调度"></a><strong>(2)优先级调度</strong></h5><p>基本思想：每个进程被赋予一个优先级，允许优先级最高的可运行进程先运行。</p>
+<p>为防止高优先级进程无休止运行，调度程序可能在每个时钟滴答（时钟中断）降低当前进程的优先级。或者给每个进程赋予一个允许运行的最大时间片。</p>
+<p>优先级可以静态赋予或动态赋予。为达到某种目的，优先级也可以由系统动态确定。</p>
+<p>e.g.有些进程为I/O密集型，多数事件用来等待IO结束。这样的进程需要CPU时，应立即分配，以便启动下一个I/O请求，这样在另一个进程计算的同时执行I/O操作。一种较简单的算法是，将其优先级设为1/f，f为该进程在上一事件片中所占的部分。</p>
+<p>可以将一组进程分成若干类，并在各类之间采用优先级调度，而在各类进程的内部采用轮转调度。</p>
+<p><img src="/images/pasted-55.png" alt="5-5"></p>
+<h5 id="3-多级队列"><a href="#3-多级队列" class="headerlink" title="(3)多级队列"></a><strong>(3)多级队列</strong></h5><p>CPU密集型进程设置较长的时间片比频繁地分给它们很短的时间要更为高效（减少交换次数）。另一方面，长时间片的进程又会影响到响应时间。</p>
+<p>解决办法是设立优先级类。属于最高优先级类的进程运行一个时间片，属于次高优先级类的进程运行2个时间片…4..以此类推。当一个进程运行完分配的时间后，被移到下一级。</p>
+<h5 id="4-最短进程优先"><a href="#4-最短进程优先" class="headerlink" title="(4)最短进程优先"></a><strong>(4)最短进程优先</strong></h5><p>交互进程通常遵循下列模式：等待命令、执行命令、等待命令、执行命令，如此反复，把命令的执行看成”作业”，运行最短的作业来使响应事件对端。</p>
+<h5 id="5-保证调度"><a href="#5-保证调度" class="headerlink" title="(5)保证调度"></a><strong>(5)保证调度</strong></h5><h5 id="6-彩票调度"><a href="#6-彩票调度" class="headerlink" title="(6)彩票调度"></a><strong>(6)彩票调度</strong></h5><p>为进程提供各种系统资源（如CPU时间）的彩票。需要调度决策时，抽一张彩票，拥有该彩票的进程就获得资源。</p>
+<h5 id="7-公平分享调度"><a href="#7-公平分享调度" class="headerlink" title="(7)公平分享调度"></a><strong>(7)公平分享调度</strong></h5><h4 id="4-实时系统中的调度"><a href="#4-实时系统中的调度" class="headerlink" title="4.实时系统中的调度"></a><strong>4.实时系统中的调度</strong></h4><p>实时系统是一种时间起着主导作用的系统。</p>
+<p>实时系统通常分为<strong>硬实时</strong>和<strong>软实时</strong>，前者的含义是必须满足绝对的截止时间，后者的含义是虽然不希望偶尔错失截止时间，但可以容忍。</p>
+<p><img src="/images/pasted-56.png" alt="5-6"></p>
+<p>实时系统的调度算法可以是静态或动态的。</p>
+<h4 id="5-策略和机制"><a href="#5-策略和机制" class="headerlink" title="5.策略和机制"></a><strong>5.策略和机制</strong></h4><p>调度机制和调度策略分离，将调度算法以某种形式参数化，而参数可以由用户进程填写。调度机制位于内核，而调度策略则由用户进程决定。</p>
+<h4 id="6-线程调度"><a href="#6-线程调度" class="headerlink" title="6.线程调度"></a><strong>6.线程调度</strong></h4><p><img src="/images/pasted-57.png" alt="5-7"></p>
+<p>上图中，a为用户级线程，当内核选取一个进程后，运行时系统选取要运行的线程。b为内核级线程，内核选择一个特定的线程运行，上图中，b中的A1,B1,A2,B2,A3,B3这种情况是可能的，图中有错误。</p>
+<p>用户级线程和内核级线程之间的差别在于性能。</p>
 
         </div>
         
@@ -287,7 +254,7 @@ var _hmt = _hmt || [];
             <div class="level-start">
                 <div class="level-item">
                     <span class="is-size-6 has-text-grey has-mr-7">#</span>
-                    <a class="has-link-grey -link" href="/tags/网络编程/">网络编程</a>
+                    <a class="has-link-grey -link" href="/tags/操作系统/">操作系统</a>
                 </div>
             </div>
         </div>
@@ -327,17 +294,10 @@ var _hmt = _hmt || [];
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
-        <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/2019/05/12/libevent源码剖析-9-时间管理/">
-                <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">libevent源码剖析(9)--时间管理</span>
-            </a>
-        </div>
-        
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/2019/05/10/libevent源码剖析-8-支持I-O多路复用/">
-                <span class="level-item">libevent源码剖析(8)--支持I/O多路复用</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/06/15/《现代操作系统》学习笔记-4-进程间通信/">
+                <span class="level-item">《现代操作系统》学习笔记(4)--进程间通信</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -778,7 +738,7 @@ var _hmt = _hmt || [];
             <div class="level-start has-text-centered-mobile">
                 <a class="footer-logo is-block has-mb-6" href="/">
                 
-                    <img src="/images/冯泡泡.png" alt="I/O之同步、异步、阻塞、非阻塞" height="28">
+                    <img src="/images/冯泡泡.png" alt="《现代操作系统》学习笔记(5)--调度" height="28">
                 
                 </a>
                 <p class="is-size-7">
