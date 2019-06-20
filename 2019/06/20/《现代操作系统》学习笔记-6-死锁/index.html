@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<script src="/js/src/click.js"></script>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta name="baidu-site-verification" content="N3g7rXsOdw">
+<meta name="baidu-site-verification" content="KOiSXH19Wh">
+<meta charset="utf-8">
+<title>《现代操作系统》学习笔记(6)--死锁 - 冯泡泡的博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta name="description" content="死锁1、资源资源就是随着时间的推移，必须能够获得、使用以及释放的任何东西。 1.1可抢占资源和不可抢占资源 可抢占资源：可以送拥有它的进程中抢占而不会产生任何副作用，例如存储器。  不可抢占资源：指在不引起相关的计算失败的情况下，无法把它从战占有它的进程出抢占过来。">
+<meta name="keywords" content="操作系统">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《现代操作系统》学习笔记(6)--死锁">
+<meta property="og:url" content="https://edwardfeng1995.github.io/2019/06/20/《现代操作系统》学习笔记-6-死锁/index.html">
+<meta property="og:site_name" content="冯泡泡的博客">
+<meta property="og:description" content="死锁1、资源资源就是随着时间的推移，必须能够获得、使用以及释放的任何东西。 1.1可抢占资源和不可抢占资源 可抢占资源：可以送拥有它的进程中抢占而不会产生任何副作用，例如存储器。  不可抢占资源：指在不引起相关的计算失败的情况下，无法把它从战占有它的进程出抢占过来。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://edwardfeng1995.github.io/images/og_image.png">
+<meta property="og:updated_time" content="2019-06-20T13:45:10.046Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="《现代操作系统》学习笔记(6)--死锁">
+<meta name="twitter:description" content="死锁1、资源资源就是随着时间的推移，必须能够获得、使用以及释放的任何东西。 1.1可抢占资源和不可抢占资源 可抢占资源：可以送拥有它的进程中抢占而不会产生任何副作用，例如存储器。  不可抢占资源：指在不引起相关的计算失败的情况下，无法把它从战占有它的进程出抢占过来。">
+<meta name="twitter:image" content="https://edwardfeng1995.github.io/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/images/favicon.svg">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "//hm.baidu.com/hm.js?1aef5bc8ba3740f8fc4e445dfe48d734";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/冯泡泡.png" alt="《现代操作系统》学习笔记(6)--死锁" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">Home</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-06-20T13:34:00.000Z">2019-06-20</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    15 分钟 读完 (大约 2245 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                《现代操作系统》学习笔记(6)--死锁
+            
+        </h1>
+        <div class="content">
+            <h2 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h2><h3 id="1、资源"><a href="#1、资源" class="headerlink" title="1、资源"></a><strong>1、资源</strong></h3><p>资源就是随着时间的推移，必须能够获得、使用以及释放的任何东西。</p>
+<h4 id="1-1可抢占资源和不可抢占资源"><a href="#1-1可抢占资源和不可抢占资源" class="headerlink" title="1.1可抢占资源和不可抢占资源"></a><strong>1.1可抢占资源和不可抢占资源</strong></h4><ul>
+<li><p><strong>可抢占资源：</strong>可以送拥有它的进程中抢占而不会产生任何副作用，例如存储器。</p>
+</li>
+<li><p><strong>不可抢占资源：</strong>指在不引起相关的计算失败的情况下，无法把它从战占有它的进程出抢占过来。</p>
+</li>
+</ul>
+<a id="more"></a>
+<p>死锁与不可抢占资源有关。</p>
+<p>使用一个资源所需要的事件顺序可以抽象表示为如下：</p>
+<ul>
+<li><p>1)请求资源。。</p>
+</li>
+<li><p>2)使用资源。</p>
+</li>
+<li><p>3)释放资源。</p>
+</li>
+</ul>
+<h4 id="1-2资源获取"><a href="#1-2资源获取" class="headerlink" title="1.2资源获取"></a><strong>1.2资源获取</strong></h4><p>一种允许用户管理资源的可能方法是为每一个资源配置一个信号量。</p>
+<p>如果进程需要两个以上的资源，通常都是连续获取。</p>
+<p><img src="/images/pasted-58.png" alt="6-1"></p>
+<p><img src="/images/pasted-59.png" alt="6-2"></p>
+<h3 id="2、死锁简介"><a href="#2、死锁简介" class="headerlink" title="2、死锁简介"></a><strong>2、死锁简介</strong></h3><p>死锁的规范定义如下：如果一个进程集合中的每个进程都在等待只能由该进程集合中的其他进程才能引发的事件，那么该进程集合就是死锁的。</p>
+<p>大多数情况下，死锁进程集合中的每一个进程都在等待另一个死锁的进程已经占有的资源，所有进程都不能运行，就无法释放资源，就不会被唤醒。这种死锁称为<strong>资源死锁</strong>。</p>
+<h4 id="2-1资源死锁的条件"><a href="#2-1资源死锁的条件" class="headerlink" title="2.1资源死锁的条件"></a><strong>2.1资源死锁的条件</strong></h4><ul>
+<li><p><strong>互斥条件。</strong>每个资源要么已经分配给了一个进程，要么就是可用的</p>
+</li>
+<li><p><strong>占有和等待条件。</strong></p>
+</li>
+<li><p><strong>不可抢占条件。</strong></p>
+</li>
+<li><p><strong>环路等待条件。</strong></p>
+</li>
+</ul>
+<p>破坏上述条件来预防死锁</p>
+<h4 id="2-2死锁建模"><a href="#2-2死锁建模" class="headerlink" title="2.2死锁建模"></a><strong>2.2死锁建模</strong></h4><p><img src="/images/pasted-60.png" alt="6-3"></p>
+<p>方框代表资源，圆圈代表进程，方框指向进程代表资源被该进程占用，圆圈指向资源，代表进程请求该资源并已被阻塞。</p>
+<p><img src="/images/pasted-61.png" alt="6-4"></p>
+<p>在上图中，假设系统知道有引起死锁的可能，那么系统不把资源S分配给B，B被挂起，就不会出现死锁。</p>
+<p>上图中，按请求和释放的次序一步步进行，每一步检测图中是否有环路，有环路，就有死锁。</p>
+<p>四种处理死锁的策略：</p>
+<ul>
+<li><p><strong>忽略该问题。</strong></p>
+</li>
+<li><p><strong>检测死锁并恢复。</strong>让死锁发生，检测是否发生，一旦发生死锁，采取行动解决问题。</p>
+</li>
+<li><p><strong>仔细对资源进行分配，动态地避免死锁。</strong></p>
+</li>
+<li><p><strong>破坏死锁的四个必要条件，防止死锁的产生。</strong></p>
+</li>
+</ul>
+<h3 id="3、鸵鸟算法"><a href="#3、鸵鸟算法" class="headerlink" title="3、鸵鸟算法"></a><strong>3、鸵鸟算法</strong></h3><p>不考虑死锁问题。 因为实际工作中很可能有其他更为严重的问题。如果死锁的频率不高可不考虑死锁。</p>
+<p><strong>鸵鸟算法的实质：</strong>出现死锁的概率很小，并且出现之后处理死锁会花费很大的代价，还不如不做处理，<a href="https://baike.baidu.com/item/OS/688" target="_blank" rel="noopener">OS</a>中这种置之不理的策略称之为鸵鸟算法。所以鸵鸟算法，是平衡性能和复杂性而选择的一种方法。 </p>
+<h3 id="4、死锁检测和死锁恢复"><a href="#4、死锁检测和死锁恢复" class="headerlink" title="4、死锁检测和死锁恢复"></a><strong>4、死锁检测和死锁恢复</strong></h3><p>系统允许死锁发生，当检测到死锁发生后，采取错失进行恢复。</p>
+<h4 id="4-1每种类型一个资源的死锁检测"><a href="#4-1每种类型一个资源的死锁检测" class="headerlink" title="4.1每种类型一个资源的死锁检测"></a><strong>4.1每种类型一个资源的死锁检测</strong></h4><p>每种资源类型只有一个资源。</p>
+<p><img src="/images/pasted-62.png" alt="6-5"></p>
+<p>检测上面有向图中有无环路的算法步骤如下：</p>
+<p><img src="/images/pasted-63.png" alt="6-6"></p>
+<p><img src="/images/pasted-64.png" alt="6-7"></p>
+<p>这一算法是一次将每一个节点作为一棵树的根节点，并进行<strong>深度优先搜索</strong>。如果碰到已经遇到过的节点，那么就算找到了一个环。如果从任何给定的节点触发的弧都被穷举了，那么就回溯到前面的节点。如果回溯到根并且不能再深入下去，那么从当前节点出发的子图中就不包含任何环。如果所有的节点都是如此，那么整个图就不存在环，也就是说系统不存在死锁。</p>
+<p>不是最佳算法。</p>
+<h4 id="4-2每种类型多个资源的死锁检测"><a href="#4-2每种类型多个资源的死锁检测" class="headerlink" title="4.2每种类型多个资源的死锁检测"></a><strong>4.2每种类型多个资源的死锁检测</strong></h4><p>E是现有资源向量，代表每种已存在的资源总数。</p>
+<p>A是可用资源向量，Ai表示当前可供使用的资源数。</p>
+<p>C代表当前分配矩阵，C的第i行代表Pi当前所持有的每一种类型资源的资源数。</p>
+<p>R代表请求矩阵，Rij代表Pi所需要的资源j的数量。</p>
+<p><img src="/images/pasted-65.png" alt="6-8"></p>
+<p><img src="/images/pasted-66.png" alt="6-9"></p>
+<h4 id="4-3从死锁中恢复"><a href="#4-3从死锁中恢复" class="headerlink" title="4.3从死锁中恢复"></a><strong>4.3从死锁中恢复</strong></h4><p><strong>(1)利用抢占恢复</strong></p>
+<p>临时将某个资源从它当前所有者那里转移给另一个进程。</p>
+<p><strong>(2)利用回滚恢复</strong></p>
+<p>将进程复位到一个更早的状态。</p>
+<p><strong>(3)通过杀死进程恢复</strong></p>
+<ul>
+<li>杀掉环中的一个进程或多个进程</li>
+<li>选一个环外的进程作为牺牲品释放该进程的资源</li>
+</ul>
+<h3 id="5、死锁避免"><a href="#5、死锁避免" class="headerlink" title="5、死锁避免"></a><strong>5、死锁避免</strong></h3><h4 id="5-1资源轨迹图"><a href="#5-1资源轨迹图" class="headerlink" title="5.1资源轨迹图"></a><strong>5.1资源轨迹图</strong></h4><p><img src="/images/pasted-67.png" alt="6-10"></p>
+<p>在t点处唯一的办法是运行进程A直到I4。</p>
+<h4 id="5-2安全状态和不安全状态"><a href="#5-2安全状态和不安全状态" class="headerlink" title="5.2安全状态和不安全状态"></a><strong>5.2安全状态和不安全状态</strong></h4><ul>
+<li><p><strong>安全状态：</strong></p>
+<p>如果没有死锁发生，并且即使所有进程突然请求对资源的最大需求，也仍然存在某种调度次序能够使得每一个进程运行完毕则称该状态是安全的。</p>
+</li>
+<li><p><strong>不安全状态</strong></p>
+<p>不安全状态不是死锁。</p>
+<p><strong>安全状态和不安全状态的区别是：</strong>从安全状态出发，系统能够保证所有进程都能完成；而从不安全状态出发，就没有这样的保证。</p>
+</li>
+</ul>
+<p><img src="/images/pasted-68.png" alt="6-11"><br>存在一个分配序列使得所有的进程都能完成。</p>
+<p><img src="/images/pasted-69.png" alt="6-12"></p>
+<p>不能保证多有进程都能完成。</p>
+<h4 id="5-3单个资源的银行家算法"><a href="#5-3单个资源的银行家算法" class="headerlink" title="5.3单个资源的银行家算法"></a><strong>5.3单个资源的银行家算法</strong></h4><p><img src="/images/pasted-70.png" alt="6-13"></p>
+<p>银行家算法就是对每一个请求进行检查，检查如果满足这一请求是否会达到安全状态。若是，那么就满足该请求，否则就推迟对这一请求的满足。</p>
+<h4 id="5-4多个资源的银行家算法"><a href="#5-4多个资源的银行家算法" class="headerlink" title="5.4多个资源的银行家算法"></a><strong>5.4多个资源的银行家算法</strong></h4><p>略</p>
+<p>实际中很少用，因为很少有进程能够在运行前就直到其所需资源的最大值。</p>
+<h3 id="6、死锁预防"><a href="#6、死锁预防" class="headerlink" title="6、死锁预防"></a><strong>6、死锁预防</strong></h3><p>死锁避免从本质上来说是不可能的。可以破坏死锁条件中的一个来预防死锁。</p>
+<ul>
+<li><p>破坏互斥条件</p>
+</li>
+<li><p>破坏占有并等待条件</p>
+<p>禁止已持有资源的进程再等待其他资源便可以消除死锁。一种方法是进程执行前请求所需的全部资源，另一种方法是请求资源时先释放所占有资源，再尝试一次获得所需的全部资源。</p>
+</li>
+<li><p>破坏不可抢占条件</p>
+</li>
+<li><p>破坏环路等待条件</p>
+</li>
+</ul>
+<p><img src="/images/pasted-71.png" alt="6-14"></p>
+<h3 id="7、其他问题"><a href="#7、其他问题" class="headerlink" title="7、其他问题"></a><strong>7、其他问题</strong></h3><h4 id="7-1两阶段加锁"><a href="#7-1两阶段加锁" class="headerlink" title="7.1两阶段加锁"></a><strong>7.1两阶段加锁</strong></h4><h4 id="7-2通信死锁"><a href="#7-2通信死锁" class="headerlink" title="7.2通信死锁"></a><strong>7.2通信死锁</strong></h4><p><strong>资源死锁</strong>是竞争性同步问题。</p>
+<p>通信死锁：进程A向B发送请求信息，然后阻塞直至B回复，假设请求信息丢失，A将阻塞以等待回复，而B会阻塞等待一个向其发送命令的请求，发生死锁。</p>
+<p>通信死锁是<strong>协同同步</strong>的异常情况。解决办法可以是：<strong>超时</strong>。</p>
+<h4 id="7-3活锁"><a href="#7-3活锁" class="headerlink" title="7.3活锁"></a><strong>7.3活锁</strong></h4><p>活锁指的是任务或者执行者没有被阻塞，由于某些条件没有满足，导致一直重复尝试—失败—尝试—失败的过程。处于活锁的实体是在不断的改变状态，活锁有可能自行解开。</p>
+<p>进程1可以使用资源，但它很礼貌，让其他线程先使用资源，进程2也可以使用资源，但它很绅士，也让其他线程先使用资源。这样你让我，我让你，最后两个线程都无法使用资源。</p>
+<p><img src="/images/pasted-72.png" alt="6-15"></p>
+<p>活锁没有进程阻塞。</p>
+<h4 id="7-4饥饿"><a href="#7-4饥饿" class="headerlink" title="7.4饥饿"></a><strong>7.4饥饿</strong></h4><p>指如果线程T1占用了资源R，线程T2又请求封锁R，于是T2等待。T3也请求资源R，当T1释放了R上的封锁后，系统首先批准了T3的请求，T2仍然等待。然后T4又请求封锁R，当T3释放了R上的封锁之后，系统又批准了T4的请求……，T2可能永远等待。<strong>饥饿可以通过先来先服务资源分配策略来避免。</strong></p>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/操作系统/">操作系统</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipay.jpg" alt="支付宝"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/06/19/《现代操作系统》学习笔记-5-调度/">
+                <span class="level-item">《现代操作系统》学习笔记(5)--调度</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="lv-container" data-id="city" data-uid="MTAyMC80NDEzMi8yMDY2Nw==">
+    <script type="text/javascript">
+        (function(d, s) {
+            var j, e = d.getElementsByTagName(s)[0];
+
+            if (typeof LivereTower === 'function') { return; }
+
+            j = d.createElement(s);
+            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+            j.async = true;
+
+            e.parentNode.insertBefore(j, e);
+        })(document, 'script');
+    </script>
+    <noscript> Please activate JavaScript for write a comment in LiveRe</noscript>
+</div>
+
+    </div>
+</div>
+</div>
+                
+
+<!-- 粘贴的部分 -->
+                          <!-- 修改，可选保留的栏 -->
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/头像.png" alt="冯泡泡">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        冯泡泡
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        快乐地撸撸代码，安静地品品生活
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>China,Chengdu</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        21
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        2
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        2
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/EdwardFeng1995" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/EdwardFeng1995">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Facebook" href="https://facebook.com">
+                
+                <i class="fab fa-facebook"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Twitter" href="https://twitter.com">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://dribbble.com">
+                
+                <i class="fab fa-dribbble"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="https://hexo.io" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">Hexo</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">hexo.io</span>
+                    </span>
+                </a>
+            </li>
+        
+            <li>
+                <a class="level is-mobile" href="https://github.com/ppoffice" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">PPOffice</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">github.com</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/C-心得/">
+            <span class="level-start">
+                <span class="level-item">C++心得</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Linux/">
+            <span class="level-start">
+                <span class="level-item">Linux</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            标签云
+        </h3>
+        <a href="/tags/操作系统/" style="font-size: 10px;">操作系统</a> <a href="/tags/网络编程/" style="font-size: 20px;">网络编程</a>
+    </div>
+</div>
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen is-sticky">
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            
+            <a href="/2019/06/20/《现代操作系统》学习笔记-6-死锁/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(6)--死锁">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-06-20T13:34:00.000Z">2019-06-20</time></div>
+                    <a href="/2019/06/20/《现代操作系统》学习笔记-6-死锁/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(6)--死锁</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/06/19/《现代操作系统》学习笔记-5-调度/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(5)--调度">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-06-19T07:55:00.000Z">2019-06-19</time></div>
+                    <a href="/2019/06/19/《现代操作系统》学习笔记-5-调度/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(5)--调度</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/06/15/《现代操作系统》学习笔记-4-进程间通信/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(4)--进程间通信">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-06-15T08:08:00.000Z">2019-06-15</time></div>
+                    <a href="/2019/06/15/《现代操作系统》学习笔记-4-进程间通信/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(4)--进程间通信</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/06/12/《现代操作系统》学习笔记-3-线程/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(3)--线程">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-06-12T01:54:00.000Z">2019-06-12</time></div>
+                    <a href="/2019/06/12/《现代操作系统》学习笔记-3-线程/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(3)--线程</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/06/09/《现代操作系统》学习笔记-2-进程/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(2)--进程">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-06-09T05:49:00.000Z">2019-06-09</time></div>
+                    <a href="/2019/06/09/《现代操作系统》学习笔记-2-进程/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(2)--进程</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">12</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/操作系统/">
+                        <span class="tag">操作系统</span>
+                        <span class="tag is-grey">6</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/网络编程/">
+                        <span class="tag">网络编程</span>
+                        <span class="tag is-grey">12</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+
+                
+
+<!-- 粘贴的部分 -->
+
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/冯泡泡.png" alt="《现代操作系统》学习笔记(6)--死锁" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2019 冯泡泡&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+<div align="center">
+<span id="busuanzi_container_site_pv">
+    &nbsp;&nbsp;&#10052;&nbsp;&nbsp;访问量：<span id="busuanzi_value_site_pv"></span>
+</span>
+
+<span id="busuanzi_container_site_uv">
+  &nbsp;&nbsp;&#10052;&nbsp;&nbsp;访客数：<span id="busuanzi_value_site_uv"></span>
+</span>
+
+<br>
+	
+	<span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>
+            <script>
+                var now = new Date(); 
+                function createtime() { 
+                    var grt= new Date("3/1/2019 12:00:00");//此处修改你的建站时间或者网站上线时间 
+                    now.setTime(now.getTime()+250); 
+                    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days); 
+                    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours); 
+                    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum); 
+                    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;} 
+                    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum); 
+                    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;} 
+                    document.getElementById("timeDate").innerHTML = "Security Run For "+dnum+" 天 "; 
+                    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒"; 
+                } 
+            setInterval("createtime()",250);
+</script>
+
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+</div></footer>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+
+    <!-- 雪花特效 -->
+    <script type="text/javascript">
+      var windowWidth = $(window).width();
+      if (windowWidth > 480) {
+        document.write('<script type="text/javascript" src="/js/src/snow.js"><\/script>');
+      }
+    </script>
+
+</body>
+</html>
