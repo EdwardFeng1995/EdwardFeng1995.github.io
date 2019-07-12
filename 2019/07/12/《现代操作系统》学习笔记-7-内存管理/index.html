@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<script src="/js/src/click.js"></script>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta name="baidu-site-verification" content="N3g7rXsOdw">
+<meta name="baidu-site-verification" content="KOiSXH19Wh">
+<meta charset="utf-8">
+<title>《现代操作系统》学习笔记(7)--内存管理 - 冯泡泡的博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta name="description" content="内存管理分层存储器体系，高速缓存（cache）、内存、磁盘、DVD、USB等。 存储管理器：操作系统中管理分层存储体系的部分。它的任务是有效地管理内存，即记录哪些内存是正在使用的，哪些内存是空闲的；在进程需要时为其分配内存，在进程使用完后释放内存。">
+<meta name="keywords" content="操作系统">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《现代操作系统》学习笔记(7)--内存管理">
+<meta property="og:url" content="https://edwardfeng1995.github.io/2019/07/12/《现代操作系统》学习笔记-7-内存管理/index.html">
+<meta property="og:site_name" content="冯泡泡的博客">
+<meta property="og:description" content="内存管理分层存储器体系，高速缓存（cache）、内存、磁盘、DVD、USB等。 存储管理器：操作系统中管理分层存储体系的部分。它的任务是有效地管理内存，即记录哪些内存是正在使用的，哪些内存是空闲的；在进程需要时为其分配内存，在进程使用完后释放内存。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://edwardfeng1995.github.io/images/og_image.png">
+<meta property="og:updated_time" content="2019-07-12T08:45:07.268Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="《现代操作系统》学习笔记(7)--内存管理">
+<meta name="twitter:description" content="内存管理分层存储器体系，高速缓存（cache）、内存、磁盘、DVD、USB等。 存储管理器：操作系统中管理分层存储体系的部分。它的任务是有效地管理内存，即记录哪些内存是正在使用的，哪些内存是空闲的；在进程需要时为其分配内存，在进程使用完后释放内存。">
+<meta name="twitter:image" content="https://edwardfeng1995.github.io/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/images/favicon.svg">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "//hm.baidu.com/hm.js?1aef5bc8ba3740f8fc4e445dfe48d734";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/冯泡泡.png" alt="《现代操作系统》学习笔记(7)--内存管理" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">Home</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-07-12T08:32:00.000Z">2019-07-12</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    34 分钟 读完 (大约 5163 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                《现代操作系统》学习笔记(7)--内存管理
+            
+        </h1>
+        <div class="content">
+            <h2 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h2><p><strong>分层存储器体系，</strong>高速缓存（cache）、内存、磁盘、DVD、USB等。</p>
+<p><strong>存储管理器：</strong>操作系统中管理分层存储体系的部分。它的任务是有效地管理内存，即记录哪些内存是正在使用的，哪些内存是空闲的；在进程需要时为其分配内存，在进程使用完后释放内存。</p>
+<a id="more"></a>
+<h3 id="1、无存储器抽象"><a href="#1、无存储器抽象" class="headerlink" title="1、无存储器抽象"></a><strong>1、无存储器抽象</strong></h3><p>没有抽象，直接访问内存，同时运行两个程序几乎不可能。这种方式已经很少使用了，目前在洗衣机，微波炉这样的设备上采用访问绝对内存地址的寻址方式。</p>
+<p><strong>把物理地址暴露给进程会带来以下几个严重问题：</strong></p>
+<ul>
+<li>很容易地破坏操作系统</li>
+<li>很难同时运行多个程序</li>
+</ul>
+<h3 id="2、一种存储器抽象：地址空间"><a href="#2、一种存储器抽象：地址空间" class="headerlink" title="2、一种存储器抽象：地址空间"></a><strong>2、一种存储器抽象：地址空间</strong></h3><h4 id="2-1-地址空间的概念"><a href="#2-1-地址空间的概念" class="headerlink" title="2.1  地址空间的概念"></a><strong>2.1  地址空间的概念</strong></h4><p>要使多个应用程序处于内存中并且互不影响，需要解决两个问题：<strong>保护和重定位</strong>。</p>
+<p><strong>地址空间：</strong>一个进程可用于寻址内存的一套地址集合。每个进程都有一个自己的地址空间，并且这个地址空间独立于其他进程的地址空间。</p>
+<p><strong>基址寄存器与界限寄存器：</strong></p>
+<ul>
+<li>当一个程序呢运行时，程序的其实物理地址装载到基址寄存器中，程序的长度装载到界限寄存器中。</li>
+</ul>
+<p><img src="/images/pasted-97.png" alt="1"></p>
+<ul>
+<li><p>使用基址寄存器和界限寄存器是给每个进程提供私有地址空间的非常容易的方法，因为<strong>每个内存地址在送到内存之前，都会自动 先加上基址寄存器的内容。</strong></p>
+</li>
+<li><p>使用基址寄存器与界限寄存器重定位的缺点是，<strong>每次访问内存都需要进行加法和比较运算。</strong></p>
+</li>
+</ul>
+<h4 id="2-2-交换技术"><a href="#2-2-交换技术" class="headerlink" title="2.2  交换技术"></a><strong>2.2  交换技术</strong></h4><p><strong>交换(swap)技术：</strong>把一个进程完整调入内存，使该进程运行一段时间，然后把它存回磁盘。空闲进程主要存储在磁盘上，当它们运行时就不会占用内存。</p>
+<p><img src="/images/pasted-98.png" alt="7-2"></p>
+<p><strong>内存紧缩：</strong>交换在内存中产生多个空闲区，通过把所有的进程尽可能向下移动，有可能将小的空闲区合成一大块。</p>
+<p><strong>当进程被创建或换入时应该为它分配多大的内存？？？？</strong></p>
+<ul>
+<li><p>多进程大小固定不变，则分配简单。</p>
+</li>
+<li><p>若进程数据段可增长，当换入或移动进程时为它分配一些额外的内存。当进程被换出到磁盘上时，应该只交换进程实际上使用的内存中的内容。</p>
+</li>
+</ul>
+<p><img src="/images/pasted-99.png" alt="7-3"></p>
+<h4 id="2-3、空闲内存管理"><a href="#2-3、空闲内存管理" class="headerlink" title="2.3、空闲内存管理"></a><strong>2.3、空闲内存管理</strong></h4><p>一般有两种方法跟踪内存使用情况：</p>
+<ul>
+<li>位图</li>
+<li>空闲区链表</li>
+</ul>
+<p><img src="/images/pasted-100.png" alt="7-4"></p>
+<p><strong>(1)、使用位图的存储管理</strong></p>
+<p>内存被划分成小到几个字节或大到几千字节的分配单元。每个分配单元对应与位图中的一位，0表示空闲，1表示占用。</p>
+<p><strong>分配单元越小，位图越小。分配单元越大，位图越大。</strong></p>
+<p><strong>缺点：</strong>占k个分配单元的进程调入内存时，需要搜索k个连续的0串。查找位图中指定长度的连续0串是耗时的。</p>
+<p><strong>(2)、使用链表的存储管理</strong></p>
+<p>链表中的每一个节点包含：空闲区（H）或进程（P）的指示表示、起始地址、长度和指向下一节点的指针。</p>
+<p><img src="/images/pasted-101.png" alt="7-5"></p>
+<p>当按照地址顺序在链表中存放进程和空闲区时，用来为创建的进程分配内存的几种算法如下：</p>
+<ul>
+<li><p><strong>首次适配</strong></p>
+<p>存储器沿着连标段搜索，直到找到一个足够大的空闲区，空闲区一部分供进程使用，另一部分形成新空闲区。速度很快。</p>
+</li>
+<li><p><strong>下次适配</strong></p>
+<p>找到空闲区时记录当时位置，下次从上次结束的位置开始寻找。</p>
+</li>
+<li><p><strong>最佳适配</strong></p>
+<p>搜索整个链表，找到最接近实际需要的空闲区。速度慢，产生大量的小空闲区。</p>
+</li>
+<li><p><strong>最差适配</strong></p>
+<p>总是分配最大的可用空闲区。</p>
+</li>
+<li><p><strong>快速适配</strong></p>
+<p>为常用大小的空闲区维护单独的链表。</p>
+</li>
+</ul>
+<h3 id="3、虚拟内存"><a href="#3、虚拟内存" class="headerlink" title="3、虚拟内存"></a><strong>3、虚拟内存</strong></h3><p>解决程序大于内存的问题。</p>
+<p><strong>虚拟内存的基本思想是：</strong></p>
+<p>每个程序拥有自己的地址空间，这个空间被分割成多个块，每一块称作一<strong>页</strong>或<strong>页面</strong>。每一页有连续的地址范围。这些页被映射到物理内存，但并不是所有的页都必须在内存中才能运行程序。当程序引用到一部分在物理内存中的地址空间时，由硬件立刻执行必要的映射。当程序引用到一部分不在物理内存中的地址空间时，由操作系统负责将缺失的部分装入物理内存并重新执行失败的指令。</p>
+<h4 id="3-1、分页"><a href="#3-1、分页" class="headerlink" title="3.1、分页"></a><strong>3.1、分页</strong></h4><p>大部分虚拟内存系统中都使用一种称为<strong>分页</strong>的技术。</p>
+<p>程序产生的地址称为<strong>虚拟地址</strong>，构成了一个<strong>虚拟地址空间</strong>。在使用虚拟内存的情况下，虚拟地址不是被直接送到内存总线上，而是被送到内存管理单元（MMU）,MMU把虚拟地址映射为物理内存地址。</p>
+<p><img src="/images/pasted-102.png" alt="7-6"></p>
+<p>虚拟地址空间按照固定大小划分成被称为<strong>页面</strong>的若干单元。在物理内存中对应的单元称为<strong>页框</strong>。<strong>页面和页框的大小通常是一样的。RAM和磁盘之间的交换总是以整个页面为单位进行的。</strong></p>
+<p>在实际的硬件中，用一个“<strong>在/不在</strong>”位记录页面在内存中的实际存在情况。</p>
+<font color="#0000ff">MMU注意到页面没有被映射，于是使CPU陷入到操作系统，这个陷进称为<strong>缺页中断</strong>或<strong>缺页错误</strong>。操作系统系统找到一个很少使用的页框且把它的内容写入磁盘。随后把需要访问的页面读到刚才回收的页框中，修改映射关系，然后重新启动引起陷阱的指令。</font>
+
+<p><strong>下图是MMU的内部操作</strong></p>
+<p><img src="/images/pasted-103.png" alt="7-7"></p>
+<p><strong>输入的16位虚拟地址被分为4位IDE页号和12位的偏移量。4位的页号可以表示16个页面，12位的偏移可以为一页内的全部4096个字节编址。可用页号作为页表的索引，以得出对应于该虚拟页面的页框号。如果在/不在位为0，则引起一个操作系统陷进。如果该位是1，则将页表中查道德页框号复制到输出寄存器的高3位中，再加上输入虚拟地址中的低12位偏移量，构成15位的物理地址，然后送到内存总线。</strong></p>
+<h4 id="3-1、页表"><a href="#3-1、页表" class="headerlink" title="3.1、页表"></a><strong>3.1、页表</strong></h4><p>虚拟地址被分成<strong>虚拟页号（高位部分）</strong>和<strong>偏移量（低位部分）</strong>两部分。</p>
+<p><strong>页表的目的是把虚拟页面映射为页框。</strong></p>
+<p><img src="/images/pasted-104.png" alt="7-8">    </p>
+<p>最重要的域是<strong>页框号</strong>，其次是<strong>“在/不在”</strong>位。<strong>保护</strong>位指出一个页允许什么类型的访问。为了记录页面的使用状况，引入了<strong>修改</strong>位（有时也被称为<strong>脏位</strong>）和<strong>访问</strong>位。</p>
+<p>页表只保存把虚拟地址转换为物理地址时硬件所需要的信息。操作系统在处理缺页中断时需要把该页面的磁盘地址等信息保存在操作系统内部的软件表格中。</p>
+<font color="#0000ff"><strong>虚拟内存本质上是用来创造一个新的抽象概念——地址空间，这个概念是对物理内存的抽象，类似于进程是对物理处理器（CPU）的抽象。</strong></font>
+
+<h4 id="3-3、加速分页过程"><a href="#3-3、加速分页过程" class="headerlink" title="3.3、加速分页过程"></a><strong>3.3、加速分页过程</strong></h4><p>在任何分页系统中，都需要考虑两个主要问题：</p>
+<ul>
+<li><strong>1)虚拟地址到物理地址的映射必须非常快。</strong></li>
+<li><strong>2)如果虚拟地址空间很大，页表也会很大。</strong></li>
+</ul>
+<p>第一个问题是由于每次访问内存都需要进行虚拟地址到物理地址的映射，所有的指令最终都必须来自内存，并且很多指令也会访问内存中的操作数。第二个问题来自现代计算机使用至少32位虚拟地址，而且64位变得越来越普遍。</p>
+<h5 id="（1）转换检测缓冲区"><a href="#（1）转换检测缓冲区" class="headerlink" title="（1）转换检测缓冲区"></a><strong>（1）转换检测缓冲区</strong></h5><p>本方案基于：大多数程序总是对少量的页面进行多次的访问，只有很少的页表项会被反复读取，而其他的页表项很少被访问。</p>
+<p><strong>转换检测缓冲区（TLB）</strong>，又称为<strong>相联存储器</strong>或<strong>快表</strong>。通常在MMU中，包含少量的表项。</p>
+<p><img src="/images/pasted-105.png" alt="7-9"></p>
+<p>将一个虚拟地址放入MMU中进行转换时，硬件首先通过将该虚拟页号与TLB中所有表项同时（即并行）进行匹配，判断虚拟页面是否在其中。如果发现有效匹配且访问操作不违反保护位，则将页框号直接取出而不必再访问页表。如果虚拟页号确实是在TLB中，但是操作违反保护位，则会产生一个保护错误，就像对页表进行非法访问一样。如果MMU检测到没有有效的匹配项，就会进行正常的页表查询。接着从TLB中淘汰一个表项，然后用新找到的页表项代替它。</p>
+<h5 id="（2）软件TLB管理"><a href="#（2）软件TLB管理" class="headerlink" title="（2）软件TLB管理"></a><strong>（2）软件TLB管理</strong></h5><p>当发生TLB访问失效时，不再是由MMU到页表中查找并取出需要的页表项，而是生成一个TLB失效并将问题交给操作系统解决。</p>
+<p>两种不同的TLB失效：</p>
+<ul>
+<li><p><strong>软失效</strong></p>
+<p>一个页面访问在内存中而不在TLB中。需要更新TLB，不需要产生磁盘I/O。</p>
+</li>
+<li><p><strong>硬失效</strong></p>
+<p>页面本身不在内存中（当然也不在TLB中），需要一次磁盘存取以装入该页面。</p>
+</li>
+</ul>
+<p>在页表结构中查找相应的映射被称为<strong>页表遍历</strong>。</p>
+<ul>
+<li><strong>次要缺页错误</strong>：所需要的页面可能就在内存中，但却未记录在该进程的页表里。</li>
+<li><strong>严重缺页错误</strong>：需要从硬盘重新调入页面。</li>
+<li><strong>段错误</strong>：程序访问了一个非法地址。</li>
+</ul>
+<h4 id="3-4、针对大内存的页表"><a href="#3-4、针对大内存的页表" class="headerlink" title="3.4、针对大内存的页表"></a>3.4、针对大内存的页表</h4><h5 id="（1）多级页表"><a href="#（1）多级页表" class="headerlink" title="（1）多级页表"></a><strong>（1）多级页表</strong></h5><p><img src="/images/pasted-106.png" alt="7-10"></p>
+<p><strong>引入多级页表的原因是避免把全部页表一直保存在内存中。</strong></p>
+<p>由索引顶级页表得到表项中含有二级页表的地址或页框号。</p>
+<h5 id="（2）倒排页表"><a href="#（2）倒排页表" class="headerlink" title="（2）倒排页表"></a><strong>（2）倒排页表</strong></h5><p>实际内存中的每个页框对应一个表项，而不是每个虚拟页面对应一个表项。</p>
+<p>从虚拟地址到物理地址的转换变得很困难。</p>
+<h3 id="4、页面置换算法"><a href="#4、页面置换算法" class="headerlink" title="4、页面置换算法"></a><strong>4、页面置换算法</strong></h3><p>​        当发生缺页中断时，操作系统必须在内存中选择一个页面将其换出内存，以便为即将调入的页面腾出空间。如果要换出的页面在内存驻留期间已经修改过，就必须把它写回磁盘以更新该页面在磁盘上的副本；如果该页面没有被修改过（如一个包含程序正文的页面），那么它在磁盘上的副本已经是最新的，不需要回写。直接用调入的页面覆盖被淘汰的页面就可以了。</p>
+<h5 id="（1）最优页面置换算法"><a href="#（1）最优页面置换算法" class="headerlink" title="（1）最优页面置换算法"></a><strong>（1）最优页面置换算法</strong></h5><h5 id="（2）最近未使用页面置换算法"><a href="#（2）最近未使用页面置换算法" class="headerlink" title="（2）最近未使用页面置换算法"></a><strong>（2）最近未使用页面置换算法</strong></h5><h5 id="（3）先进先出页面置换算法"><a href="#（3）先进先出页面置换算法" class="headerlink" title="（3）先进先出页面置换算法"></a><strong>（3）先进先出页面置换算法</strong></h5><p>操作系统维护一个所有当前在内存中的页面的<strong>链表</strong>，最新进入的页面放在表尾，最早进入的页面放在表头。当发生缺页中断时，淘汰表头的页面并把新调入的页面加到末尾。</p>
+<h5 id="（4）第二次机会页面置换算法"><a href="#（4）第二次机会页面置换算法" class="headerlink" title="（4）第二次机会页面置换算法"></a><strong>（4）第二次机会页面置换算法</strong></h5><p>检查最老页面的R位。如果是0，那么这个页面既老又没有被使用，可以立刻置换掉；如果是1，就清0，并把该页面放到链表的末尾端，修改它的装入事件使它就像刚装入的一样。</p>
+<h5 id="（5）始终页面置换算法"><a href="#（5）始终页面置换算法" class="headerlink" title="（5）始终页面置换算法"></a><strong>（5）始终页面置换算法</strong></h5><h5 id="（6）最近最少使用-LRU-页面置换算法"><a href="#（6）最近最少使用-LRU-页面置换算法" class="headerlink" title="（6）最近最少使用(LRU)页面置换算法"></a><strong>（6）最近最少使用(LRU)页面置换算法</strong></h5><p>在缺页中断发生时，置换未使用时间最长的页面。</p>
+<h5 id="（7）用软件模拟LRU"><a href="#（7）用软件模拟LRU" class="headerlink" title="（7）用软件模拟LRU"></a><strong>（7）用软件模拟LRU</strong></h5><h5 id="（8）工作集页面置换算法"><a href="#（8）工作集页面置换算法" class="headerlink" title="（8）工作集页面置换算法"></a><strong>（8）工作集页面置换算法</strong></h5><p>一个进程当前正在使用的页面的集合称为它的<strong>工作集</strong>。</p>
+<p>不少分页系统都会设法跟踪进程的工作集，以确保在让进程运行以前，它的工作集就已在内存中了。该方法称为<strong>工作集模型</strong>，其目的在于大大减少缺页中断率。在进程运行前余弦装入其工作集页面也称为<strong>预先调页</strong>。</p>
+<p>一个进程从它开始执行到当前所实际使用的CPU时间总数通常称作<strong>当前实际运行时间</strong>。进程的<strong>工作集</strong>可以被称为在过去的τ秒实际运行时间中它所访问过的页面的集合。</p>
+<p>以下是工作集算法示意图：</p>
+<p><img src="/images/pasted-107.png" alt="7-11"></p>
+<h5 id="（9）工作集时钟页面置换算法"><a href="#（9）工作集时钟页面置换算法" class="headerlink" title="（9）工作集时钟页面置换算法"></a><strong>（9）工作集时钟页面置换算法</strong></h5><p><img src="/images/pasted-108.png" alt="7-12"></p>
+<h5 id="（10）页面置换算法小结"><a href="#（10）页面置换算法小结" class="headerlink" title="（10）页面置换算法小结"></a><strong>（10）页面置换算法小结</strong></h5><p><img src="/images/pasted-109.png" alt="7-13"></p>
+<p>最优算法在当前页面中置换最后要访问到的页面。</p>
+<p>NRU算法根据R位和M位的状态把页面分为四类。从编号最小的类中随机选择一个页面置换。</p>
+<p>FIFO算法通过维护一个页面的链表来记录它们装入内存的顺序。淘汰的是最老的页面，但该页面可能仍在使用。</p>
+<p>第二次机会算法是对FIFO算法的改进，它在移出页面前先检查该页面是否正在被使用。</p>
+<p>LRU算法是一种非常优秀的算法，但是只能通过特定的硬件来实现。</p>
+<p>工作集算法有合理的性能，但实现开销较大。</p>
+<p><strong>最好的两种算法是老化算法和工作集时钟算法，它们分别基于LRU和工作集，都具有良好的页面调度性能，可以有效地实现</strong>。</p>
+<h3 id="5、分段"><a href="#5、分段" class="headerlink" title="5、分段"></a>5、分段</h3><p>在一维地址空间中，当有多个动态增加的表时，一个表可能会与另一个表发生碰撞。<strong>有两个或多个独立的地址空间可能比只有一个要好得多</strong>。</p>
+<p>每个段由一个从0到最大的线性地址序列构成。段的长度在运行期间可以动态改变，比如，堆栈段的长度在数据被压入时会增长，在数据被弹出时又会减小。</p>
+<p><strong>分段的好处：</strong></p>
+<ul>
+<li>每个段都构成了一个独立的地址空间，它们可以独立地增长或减小而不会影响到其他的段。可以简化对长度经常变动的数据结构的管理。</li>
+<li>模块化，如果每个过程都位于一个独立的段中并且起始地址是0，如果随后位于段n的过程被修改并重新编译，即使新版本的程序要比老的大，也不需要对其他的过程进行修改（没有改变它们的起始位置）。</li>
+<li>有助于在几个进程之间共享过程和数据。</li>
+</ul>
+<p>下图为分页与分段的比较：</p>
+<p><img src="/images/pasted-110.png" alt="7-14"></p>
+<h5 id="5-1、纯分段的实现"><a href="#5-1、纯分段的实现" class="headerlink" title="5.1、纯分段的实现"></a>5.1、纯分段的实现</h5><p>分段和分页的实现本质上是不同的：<strong>页面是定长的而段不是</strong>。</p>
+<p>纯分段会出现<strong>棋盘型碎片</strong>或<strong>外部碎片</strong>。可以通过内存紧缩来解决。如下图：</p>
+<p><img src="/images/pasted-111.png" alt="7-15"></p>
+<h5 id="5-2、分段和分页结合：MULTICS"><a href="#5-2、分段和分页结合：MULTICS" class="headerlink" title="5.2、分段和分页结合：MULTICS"></a>5.2、分段和分页结合：MULTICS</h5><p>MULTICS的设计者决定把每个段都看作一个虚拟内存并对它进行分页，以结合分页的优点（<strong>统一的页面大小和在只使用段的一部分时不用把它全部调入内存</strong>）和分段的优点（<strong>易于编程、模块化、保护和共享</strong>）。</p>
+<p>每个MULTICS程序都有一个段表，每个段对应一个描述符。</p>
+<p><img src="/images/pasted-112.png" alt="7-16"></p>
+<p>MULTICS地址到内存地址的转换：</p>
+<p><img src="/images/pasted-113.png" alt="7-17"></p>
+<h5 id="5-3、分段和分页结合：Intel-x86"><a href="#5-3、分段和分页结合：Intel-x86" class="headerlink" title="5.3、分段和分页结合：Intel x86"></a>5.3、分段和分页结合：Intel x86</h5><p>x86处理器中虚拟内存的核心是两张表，即<strong>LDT（局部描述符表）</strong>和<strong>GDT（全局描述符表）</strong>。</p>
+<p>逻辑地址由两部分组成：<strong>一个段标识符</strong>和<strong>一个指定段内相对地址的偏移量</strong>，段标识符是一个16位长的字段，称为段选择符（选择子）。为了访问一个段，一个x86程序必须把这个段的选择子装入机器的6个段寄存器的某一个中。</p>
+<p><img src="/images/pasted-114.png" alt="7-18"></p>
+<p>通过选择子可以找到段描述符，首先根据第二位，选择LDT或GDT；随后选择子被复制进一个内部擦除寄存器中并且它的低3位被清0；最后，LDT或GDT表的地址被加到它上面，得出一个直接指向描述符的指针。GDT地址+索引号×8（段描述符是8字节长）。<strong>段描述符由8个字节构成，包括段的基址、大小和其他信息</strong>，如下图所示：</p>
+<p><img src="/images/pasted-115.png" alt="7-19"></p>
+<p><img src="/images/pasted-116.png" alt="7-20"></p>
+<p>逻辑地址转换为线性地址如下图所示：</p>
+<p><img src="/images/pasted-117.png" alt="7-21"></p>
+<p>如果禁止分页，线性地址就被解释为物理地址，如果允许分页，线性地址就被解释为虚拟地址并通过页表映射到物理地址。</p>
+<p>线性地址到物理地址的映射如下图所示：</p>
+<p><img src="/images/pasted-118.png" alt="7-22"></p>
+<p>从上图可以看出，线性地址被分为三个域：<strong>目录、页面和偏移量</strong>。目录域被作为索引在页目录中找到指向正确的页表的指针，随后页面域被用作索引在页表中找到页框的物理地址，最后，偏移量被加到页框的地址上得到需要的字节或字的物理地址。</p>
+<h3 id="6、其他"><a href="#6、其他" class="headerlink" title="6、其他"></a>6、其他</h3><h5 id="6-1、与分页有关的工作"><a href="#6-1、与分页有关的工作" class="headerlink" title="6.1、与分页有关的工作"></a>6.1、与分页有关的工作</h5><p>操作系统要在下面的四段时间里做与分页相关的工作：<strong>进程创建时，进程执行时，缺页中断时和进程终止时。</strong></p>
+<ul>
+<li>当在分页系统中创建一个新进程时，操作系统要确定程序和数据在初始时有多大，并为它们创建一个页表。</li>
+<li>当调度一个进程执行时，必须为新进程重置MMU，刷新TLB，以清除以前的进程遗留的痕迹。</li>
+<li>当缺页中断发生时，操作系统必须通过读硬件寄存器来确定是哪个虚拟地址造成了缺页中断。</li>
+<li>当进程退出的时候，操作系统必须释放进程的页表、页面和页面在硬盘上所占用的空间。</li>
+</ul>
+<h5 id="6-2、缺页中断处理"><a href="#6-2、缺页中断处理" class="headerlink" title="6.2、缺页中断处理"></a>6.2、缺页中断处理</h5><p><img src="/images/pasted-119.png" alt="7-23"></p>
+<p><img src="/images/pasted-120.png" alt="7-24"></p>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/操作系统/">操作系统</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipay.jpg" alt="支付宝"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/06/25/计算机网络-http协议/">
+                <span class="level-item">计算机网络--http协议</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="lv-container" data-id="city" data-uid="MTAyMC80NDEzMi8yMDY2Nw==">
+    <script type="text/javascript">
+        (function(d, s) {
+            var j, e = d.getElementsByTagName(s)[0];
+
+            if (typeof LivereTower === 'function') { return; }
+
+            j = d.createElement(s);
+            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+            j.async = true;
+
+            e.parentNode.insertBefore(j, e);
+        })(document, 'script');
+    </script>
+    <noscript> Please activate JavaScript for write a comment in LiveRe</noscript>
+</div>
+
+    </div>
+</div>
+</div>
+                
+
+<!-- 粘贴的部分 -->
+                          <!-- 修改，可选保留的栏 -->
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/头像.png" alt="冯泡泡">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        冯泡泡
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        快乐地撸撸代码，安静地品品生活
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>China,Chengdu</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        23
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        3
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        3
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/EdwardFeng1995" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/EdwardFeng1995">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Facebook" href="https://facebook.com">
+                
+                <i class="fab fa-facebook"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Twitter" href="https://twitter.com">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://dribbble.com">
+                
+                <i class="fab fa-dribbble"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="https://hexo.io" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">Hexo</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">hexo.io</span>
+                    </span>
+                </a>
+            </li>
+        
+            <li>
+                <a class="level is-mobile" href="https://github.com/ppoffice" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">PPOffice</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">github.com</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/C-心得/">
+            <span class="level-start">
+                <span class="level-item">C++心得</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Linux/">
+            <span class="level-start">
+                <span class="level-item">Linux</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/计算机网络/">
+            <span class="level-start">
+                <span class="level-item">计算机网络</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            标签云
+        </h3>
+        <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/操作系统/" style="font-size: 15px;">操作系统</a> <a href="/tags/网络编程/" style="font-size: 20px;">网络编程</a>
+    </div>
+</div>
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen is-sticky">
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            
+            <a href="/2019/07/12/《现代操作系统》学习笔记-7-内存管理/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(7)--内存管理">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-07-12T08:32:00.000Z">2019-07-12</time></div>
+                    <a href="/2019/07/12/《现代操作系统》学习笔记-7-内存管理/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(7)--内存管理</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/06/25/计算机网络-http协议/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="计算机网络--http协议">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-06-25T12:00:00.000Z">2019-06-25</time></div>
+                    <a href="/2019/06/25/计算机网络-http协议/" class="has-link-black-ter is-size-6">计算机网络--http协议</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/计算机网络/">计算机网络</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/06/20/《现代操作系统》学习笔记-6-死锁/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(6)--死锁">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-06-20T13:34:00.000Z">2019-06-20</time></div>
+                    <a href="/2019/06/20/《现代操作系统》学习笔记-6-死锁/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(6)--死锁</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/06/19/《现代操作系统》学习笔记-5-调度/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(5)--调度">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-06-19T07:55:00.000Z">2019-06-19</time></div>
+                    <a href="/2019/06/19/《现代操作系统》学习笔记-5-调度/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(5)--调度</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/06/15/《现代操作系统》学习笔记-4-进程间通信/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(4)--进程间通信">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-06-15T08:08:00.000Z">2019-06-15</time></div>
+                    <a href="/2019/06/15/《现代操作系统》学习笔记-4-进程间通信/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(4)--进程间通信</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">12</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/http/">
+                        <span class="tag">http</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/操作系统/">
+                        <span class="tag">操作系统</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/网络编程/">
+                        <span class="tag">网络编程</span>
+                        <span class="tag is-grey">12</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+
+                
+
+<!-- 粘贴的部分 -->
+
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/冯泡泡.png" alt="《现代操作系统》学习笔记(7)--内存管理" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2019 冯泡泡&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+<div align="center">
+<span id="busuanzi_container_site_pv">
+    &nbsp;&nbsp;&#10052;&nbsp;&nbsp;访问量：<span id="busuanzi_value_site_pv"></span>
+</span>
+
+<span id="busuanzi_container_site_uv">
+  &nbsp;&nbsp;&#10052;&nbsp;&nbsp;访客数：<span id="busuanzi_value_site_uv"></span>
+</span>
+
+<br>
+	
+	<span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>
+            <script>
+                var now = new Date(); 
+                function createtime() { 
+                    var grt= new Date("3/1/2019 12:00:00");//此处修改你的建站时间或者网站上线时间 
+                    now.setTime(now.getTime()+250); 
+                    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days); 
+                    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours); 
+                    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum); 
+                    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;} 
+                    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum); 
+                    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;} 
+                    document.getElementById("timeDate").innerHTML = "Security Run For "+dnum+" 天 "; 
+                    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒"; 
+                } 
+            setInterval("createtime()",250);
+</script>
+
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+</div></footer>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+
+    <!-- 雪花特效 -->
+    <script type="text/javascript">
+      var windowWidth = $(window).width();
+      if (windowWidth > 480) {
+        document.write('<script type="text/javascript" src="/js/src/snow.js"><\/script>');
+      }
+    </script>
+
+</body>
+</html>
