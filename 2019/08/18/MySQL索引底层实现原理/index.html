@@ -416,6 +416,79 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#MySQL索引底层实现原理">
+        <span class="has-mr-6">1</span>
+        <span>MySQL索引底层实现原理</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#1、索引的本质">
+        <span class="has-mr-6">1.1</span>
+        <span>1、索引的本质</span>
+        </a></li><li>
+        <a class="is-flex" href="#2、二叉排序树">
+        <span class="has-mr-6">1.2</span>
+        <span>2、二叉排序树</span>
+        </a></li><li>
+        <a class="is-flex" href="#3、B树">
+        <span class="has-mr-6">1.3</span>
+        <span>3、B树</span>
+        </a></li><li>
+        <a class="is-flex" href="#4、B-树">
+        <span class="has-mr-6">1.4</span>
+        <span>4、B+树</span>
+        </a></li><li>
+        <a class="is-flex" href="#5、MySQL为什么使用B树（B-树）">
+        <span class="has-mr-6">1.5</span>
+        <span>5、MySQL为什么使用B树（B+树）</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#主存存储原理">
+        <span class="has-mr-6">1.5.1</span>
+        <span>主存存储原理</span>
+        </a></li><li>
+        <a class="is-flex" href="#主存的存取过程如下：">
+        <span class="has-mr-6">1.5.2</span>
+        <span>主存的存取过程如下：</span>
+        </a></li><li>
+        <a class="is-flex" href="#磁盘存取原理">
+        <span class="has-mr-6">1.5.3</span>
+        <span>磁盘存取原理</span>
+        </a></li><li>
+        <a class="is-flex" href="#局部性原理与磁盘预读">
+        <span class="has-mr-6">1.5.4</span>
+        <span>局部性原理与磁盘预读</span>
+        </a></li><li>
+        <a class="is-flex" href="#B-B-树索引的性能分析">
+        <span class="has-mr-6">1.5.5</span>
+        <span>B/B+树索引的性能分析</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#6、MySQL索引实现">
+        <span class="has-mr-6">1.6</span>
+        <span>6、MySQL索引实现</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#MyISAM索引实现">
+        <span class="has-mr-6">1.6.1</span>
+        <span>MyISAM索引实现</span>
+        </a></li><li>
+        <a class="is-flex" href="#InnoDB索引实现">
+        <span class="has-mr-6">1.6.2</span>
+        <span>InnoDB索引实现</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#7、参考博文">
+        <span class="has-mr-6">1.7</span>
+        <span>7、参考博文</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
+    
+        
 <div class="card widget">
     <div class="card-content">
         <nav class="level">
@@ -519,118 +592,6 @@ var _hmt = _hmt || [];
 </div>
     
         
-<div class="card widget" id="toc">
-    <div class="card-content">
-        <div class="menu">
-            <h3 class="menu-label">
-                目录
-            </h3>
-            <ul class="menu-list"><li>
-        <a class="is-flex" href="#MySQL索引底层实现原理">
-        <span class="has-mr-6">1</span>
-        <span>MySQL索引底层实现原理</span>
-        </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#1、索引的本质">
-        <span class="has-mr-6">1.1</span>
-        <span>1、索引的本质</span>
-        </a></li><li>
-        <a class="is-flex" href="#2、二叉排序树">
-        <span class="has-mr-6">1.2</span>
-        <span>2、二叉排序树</span>
-        </a></li><li>
-        <a class="is-flex" href="#3、B树">
-        <span class="has-mr-6">1.3</span>
-        <span>3、B树</span>
-        </a></li><li>
-        <a class="is-flex" href="#4、B-树">
-        <span class="has-mr-6">1.4</span>
-        <span>4、B+树</span>
-        </a></li><li>
-        <a class="is-flex" href="#5、MySQL为什么使用B树（B-树）">
-        <span class="has-mr-6">1.5</span>
-        <span>5、MySQL为什么使用B树（B+树）</span>
-        </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#主存存储原理">
-        <span class="has-mr-6">1.5.1</span>
-        <span>主存存储原理</span>
-        </a></li><li>
-        <a class="is-flex" href="#主存的存取过程如下：">
-        <span class="has-mr-6">1.5.2</span>
-        <span>主存的存取过程如下：</span>
-        </a></li><li>
-        <a class="is-flex" href="#磁盘存取原理">
-        <span class="has-mr-6">1.5.3</span>
-        <span>磁盘存取原理</span>
-        </a></li><li>
-        <a class="is-flex" href="#局部性原理与磁盘预读">
-        <span class="has-mr-6">1.5.4</span>
-        <span>局部性原理与磁盘预读</span>
-        </a></li><li>
-        <a class="is-flex" href="#B-B-树索引的性能分析">
-        <span class="has-mr-6">1.5.5</span>
-        <span>B/B+树索引的性能分析</span>
-        </a></li></ul></li><li>
-        <a class="is-flex" href="#6、MySQL索引实现">
-        <span class="has-mr-6">1.6</span>
-        <span>6、MySQL索引实现</span>
-        </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#MyISAM索引实现">
-        <span class="has-mr-6">1.6.1</span>
-        <span>MyISAM索引实现</span>
-        </a></li><li>
-        <a class="is-flex" href="#InnoDB索引实现">
-        <span class="has-mr-6">1.6.2</span>
-        <span>InnoDB索引实现</span>
-        </a></li></ul></li><li>
-        <a class="is-flex" href="#7、参考博文">
-        <span class="has-mr-6">1.7</span>
-        <span>7、参考博文</span>
-        </a></li></ul></li></ul>
-        </div>
-    </div>
-</div>
-
-    
-        
-
-<div class="card widget">
-    <div class="card-content">
-        <div class="menu">
-        <h3 class="menu-label">
-            链接
-        </h3>
-        <ul class="menu-list">
-        
-            <li>
-                <a class="level is-mobile" href="https://hexo.io" target="_blank">
-                    <span class="level-left">
-                        <span class="level-item">Hexo</span>
-                    </span>
-                    <span class="level-right">
-                        <span class="level-item tag">hexo.io</span>
-                    </span>
-                </a>
-            </li>
-        
-            <li>
-                <a class="level is-mobile" href="https://github.com/ppoffice" target="_blank">
-                    <span class="level-left">
-                        <span class="level-item">PPOffice</span>
-                    </span>
-                    <span class="level-right">
-                        <span class="level-item tag">github.com</span>
-                    </span>
-                </a>
-            </li>
-        
-        </ul>
-        </div>
-    </div>
-</div>
-
-
-    
-        
 <div class="card widget">
     <div class="card-content">
         <div class="menu">
@@ -685,6 +646,45 @@ var _hmt = _hmt || [];
         <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/操作系统/" style="font-size: 15px;">操作系统</a> <a href="/tags/网络编程/" style="font-size: 20px;">网络编程</a>
     </div>
 </div>
+
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="https://hexo.io" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">Hexo</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">hexo.io</span>
+                    </span>
+                </a>
+            </li>
+        
+            <li>
+                <a class="level is-mobile" href="https://github.com/ppoffice" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">PPOffice</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">github.com</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
 
     
     
