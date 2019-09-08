@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://edwardfeng1995.github.io/2019/09/08/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%EF%BC%88%E4%B8%80%EF%BC%89%E7%AE%80%E5%8D%95%E5%8A%A8%E6%80%81%E5%AD%97%E7%AC%A6%E4%B8%B2/</loc>
+    <lastmod>2019-09-08</lastmod>
+  </url>  <url>
     <loc>https://edwardfeng1995.github.io/2019/08/22/MySQL%E9%AB%98%E6%80%A7%E8%83%BD%E7%9A%84%E7%B4%A2%E5%BC%95%E7%AD%96%E7%95%A5/</loc>
     <lastmod>2019-08-24</lastmod>
   </url>  <url>
@@ -43,10 +46,10 @@
     <loc>https://edwardfeng1995.github.io/2019/05/10/libevent%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-8-%E6%94%AF%E6%8C%81I-O%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/</loc>
     <lastmod>2019-05-19</lastmod>
   </url>  <url>
-    <loc>https://edwardfeng1995.github.io/2019/05/08/libevent%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4-%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6/</loc>
+    <loc>https://edwardfeng1995.github.io/2019/05/09/libevent%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5-%E4%BA%8B%E4%BB%B6%E4%B8%BB%E5%BE%AA%E7%8E%AF/</loc>
     <lastmod>2019-05-19</lastmod>
   </url>  <url>
-    <loc>https://edwardfeng1995.github.io/2019/05/09/libevent%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5-%E4%BA%8B%E4%BB%B6%E4%B8%BB%E5%BE%AA%E7%8E%AF/</loc>
+    <loc>https://edwardfeng1995.github.io/2019/05/08/libevent%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4-%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6/</loc>
     <lastmod>2019-05-19</lastmod>
   </url>  <url>
     <loc>https://edwardfeng1995.github.io/2019/05/08/libevent%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-3-%E6%A0%B8%E5%BF%83event/</loc>
