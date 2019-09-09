@@ -10,19 +10,19 @@
 
 
 
-    <meta name="description" content="链表链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活地调整链表的长度。 由于Redis使用的C语言并没有内置链表这种数据结构，所以Redis构建了自己的链表实现。 链表在 Redis 中的应用非常广泛， 比如列表键的底层实现之一就是链表：当一个列表键包含了数量比较多的元素，又或者列表中包含的元素都是比较长的字符串时，Redis 就会使用链表作为列表键的底层实现。">
+    <meta name="description" content="链表链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活地调整链表的长度。 由于Redis使用的C语言并没有内置链表这种数据结构，所以Redis构建了自己的链表实现。">
 <meta name="keywords" content="Redis">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Redis设计与实现（二）链表">
 <meta property="og:url" content="https://edwardfeng1995.github.io/2019/09/09/Redis设计与实现（二）链表/index.html">
 <meta property="og:site_name" content="冯泡泡的博客">
-<meta property="og:description" content="链表链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活地调整链表的长度。 由于Redis使用的C语言并没有内置链表这种数据结构，所以Redis构建了自己的链表实现。 链表在 Redis 中的应用非常广泛， 比如列表键的底层实现之一就是链表：当一个列表键包含了数量比较多的元素，又或者列表中包含的元素都是比较长的字符串时，Redis 就会使用链表作为列表键的底层实现。">
+<meta property="og:description" content="链表链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活地调整链表的长度。 由于Redis使用的C语言并没有内置链表这种数据结构，所以Redis构建了自己的链表实现。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://edwardfeng1995.github.io/images/redis.jpeg">
-<meta property="og:updated_time" content="2019-09-09T10:10:53.260Z">
+<meta property="og:updated_time" content="2019-09-09T10:14:57.783Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Redis设计与实现（二）链表">
-<meta name="twitter:description" content="链表链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活地调整链表的长度。 由于Redis使用的C语言并没有内置链表这种数据结构，所以Redis构建了自己的链表实现。 链表在 Redis 中的应用非常广泛， 比如列表键的底层实现之一就是链表：当一个列表键包含了数量比较多的元素，又或者列表中包含的元素都是比较长的字符串时，Redis 就会使用链表作为列表键的底层实现。">
+<meta name="twitter:description" content="链表链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活地调整链表的长度。 由于Redis使用的C语言并没有内置链表这种数据结构，所以Redis构建了自己的链表实现。">
 <meta name="twitter:image" content="https://edwardfeng1995.github.io/images/redis.jpeg">
 
 
@@ -182,7 +182,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    11 分钟 读完 (大约 1721 个字)
+                    11 分钟 读完 (大约 1722 个字)
                 </span>
                 
                 
@@ -197,6 +197,7 @@ var _hmt = _hmt || [];
         <div class="content">
             <h2 id="链表"><a href="#链表" class="headerlink" title="链表"></a>链表</h2><p>链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活地调整链表的长度。</p>
 <p>由于Redis使用的C语言并没有内置链表这种数据结构，所以Redis构建了自己的链表实现。</p>
+<a id="more"></a>
 <p>链表在 Redis 中的应用非常广泛， 比如列表键的底层实现之一就是链表：当一个列表键包含了数量比较多的元素，又或者列表中包含的元素都是比较长的字符串时，Redis 就会使用链表作为列表键的底层实现。</p>
 <p>除了链表键之外，发布与订阅、慢查询、监视器等功能也用到了链表，Redis 服务器本身还使用链表来保存多个客户端的状态信息，以及使用链表来构建客户端输出缓冲区（output buffer）。</p>
 <h3 id="2-1-链表和链表节点的实现"><a href="#2-1-链表和链表节点的实现" class="headerlink" title="2.1 链表和链表节点的实现"></a>2.1 链表和链表节点的实现</h3><p>链表节点的数据结构如下：</p>
@@ -839,7 +840,7 @@ var _hmt = _hmt || [];
                     <span class="level-item">五月 2019</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">11</span>
+                    <span class="level-item tag">12</span>
                 </span>
             </a>
         </li>
@@ -861,7 +862,7 @@ var _hmt = _hmt || [];
                     <span class="level-item">三月 2019</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">3</span>
+                    <span class="level-item tag">2</span>
                 </span>
             </a>
         </li>
