@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<script src="/js/src/click.js"></script>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta name="baidu-site-verification" content="N3g7rXsOdw">
+<meta name="baidu-site-verification" content="KOiSXH19Wh">
+<meta charset="utf-8">
+<title>函数指针 - 冯泡泡的博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta name="description" content="函数指针今天在看Redis设计与实现的时候，看到链表的结构如下 1234567891011121314typedef struct list &amp;#123;    // 表头节点    listNode *head;    // 表尾节点    listNode *tail;    // 链表所包含的节点数量    unsigned long len;    // 节点值复制函数    void *">
+<meta property="og:type" content="article">
+<meta property="og:title" content="函数指针">
+<meta property="og:url" content="https://edwardfeng1995.github.io/2019/09/09/函数指针/index.html">
+<meta property="og:site_name" content="冯泡泡的博客">
+<meta property="og:description" content="函数指针今天在看Redis设计与实现的时候，看到链表的结构如下 1234567891011121314typedef struct list &amp;#123;    // 表头节点    listNode *head;    // 表尾节点    listNode *tail;    // 链表所包含的节点数量    unsigned long len;    // 节点值复制函数    void *">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://edwardfeng1995.github.io/images/og_image.png">
+<meta property="og:updated_time" content="2019-09-09T08:43:14.463Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="函数指针">
+<meta name="twitter:description" content="函数指针今天在看Redis设计与实现的时候，看到链表的结构如下 1234567891011121314typedef struct list &amp;#123;    // 表头节点    listNode *head;    // 表尾节点    listNode *tail;    // 链表所包含的节点数量    unsigned long len;    // 节点值复制函数    void *">
+<meta name="twitter:image" content="https://edwardfeng1995.github.io/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/images/favicon.svg">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "//hm.baidu.com/hm.js?1aef5bc8ba3740f8fc4e445dfe48d734";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/冯泡泡.png" alt="函数指针" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">Home</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-09-09T08:37:00.000Z">2019-09-09</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/C-C/">C/C++</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    11 分钟 读完 (大约 1577 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                函数指针
+            
+        </h1>
+        <div class="content">
+            <h2 id="函数指针"><a href="#函数指针" class="headerlink" title="函数指针"></a><strong>函数指针</strong></h2><p>今天在看Redis设计与实现的时候，看到链表的结构如下</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">typedef</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">list</span> &#123;</span></span><br><span class="line">    <span class="hljs-comment">// 表头节点</span></span><br><span class="line">    listNode *head;</span><br><span class="line">    <span class="hljs-comment">// 表尾节点</span></span><br><span class="line">    listNode *tail;</span><br><span class="line">    <span class="hljs-comment">// 链表所包含的节点数量</span></span><br><span class="line">    <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">long</span> len;</span><br><span class="line">    <span class="hljs-comment">// 节点值复制函数</span></span><br><span class="line">    <span class="hljs-keyword">void</span> *(*dup)(<span class="hljs-keyword">void</span> *ptr);</span><br><span class="line">    <span class="hljs-comment">// 节点值释放函数</span></span><br><span class="line">    <span class="hljs-keyword">void</span> (*<span class="hljs-built_in">free</span>)(<span class="hljs-keyword">void</span> *ptr);</span><br><span class="line">    <span class="hljs-comment">// 节点值对比函数</span></span><br><span class="line">    <span class="hljs-keyword">int</span> (*match)(<span class="hljs-keyword">void</span> *ptr, <span class="hljs-keyword">void</span> *key);</span><br><span class="line">&#125; <span class="hljs-built_in">list</span>;</span><br></pre></td></tr></table></figure>
+<p>对其中几个节点值的函数不是很理解，突然想起是函数指针。<br><a id="more"></a></p>
+<p>函数指针顾名思义就是指向函数的指针。</p>
+<figure class="highlight c++ hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 比较两个整数的大小</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">bool</span> <span class="hljs-title">camp</span><span class="hljs-params">(<span class="hljs-keyword">int</span> a, <span class="hljs-keyword">int</span> b)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// pf指向一个函数，函数的参数是两个int变量，返回值是bool类型</span></span><br><span class="line"><span class="hljs-keyword">bool</span> (*pf)(<span class="hljs-keyword">int</span> a, <span class="hljs-keyword">int</span> b);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// *pf两端的括号必不可少，下面pf指向一个函数，函数的返回值为bool *类型</span></span><br><span class="line"><span class="hljs-keyword">bool</span> *(*pf)(<span class="hljs-keyword">int</span> a, <span class="hljs-keyword">int</span> b);</span><br></pre></td></tr></table></figure>
+<h3 id="函数指针的使用"><a href="#函数指针的使用" class="headerlink" title="函数指针的使用"></a><strong>函数指针的使用</strong></h3><p>函数指针的基本使用如下：</p>
+<h3 id="函数指针的好处"><a href="#函数指针的好处" class="headerlink" title="函数指针的好处"></a><strong>函数指针的好处</strong></h3><p>函数指针看着这么高大上，那么它有什么用呢？用来装逼吗？</p>
+<p>我的理解函数指针做好处如下</p>
+<ol>
+<li><p><strong>提高灵活性</strong></p>
+<p>函数指针可以可以指向某种特定函数类型，但是函数可以有不同的实现，然后函数指针可以作为某个函数的形参，这样就具有很高的灵活性，例如，有的通用函数中要用到另一个函数，但函数名称未定，是让用户编的，形参需要做成函数指针，实现例子如下：</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;stdio.h&gt;  </span></span></span><br><span class="line">   </span><br><span class="line"><span class="hljs-comment">//Calculate用于计算积分。一共三个参数。第一个为函数指针func，指向待积分函数。二三参数为积分上下限  </span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">double</span> <span class="hljs-title">Calculate</span><span class="hljs-params">(<span class="hljs-keyword">double</span>(*func)(<span class="hljs-keyword">double</span> x), <span class="hljs-keyword">double</span> a, <span class="hljs-keyword">double</span> b)</span>  </span></span><br><span class="line"><span class="hljs-function"></span>&#123;  </span><br><span class="line">    <span class="hljs-keyword">double</span> dx = <span class="hljs-number">0.0001</span>;<span class="hljs-comment">//细分的区间长度  </span></span><br><span class="line">    <span class="hljs-keyword">double</span> sum = <span class="hljs-number">0</span>;  </span><br><span class="line">    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">double</span> xi = a+dx; xi &lt;= b; xi+=dx)  </span><br><span class="line">    &#123;  </span><br><span class="line">       <span class="hljs-keyword">double</span> area = func(xi)*dx;  </span><br><span class="line">       sum +=area;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="hljs-keyword">return</span> sum;  </span><br><span class="line">&#125;  </span><br><span class="line">   </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">double</span> <span class="hljs-title">func_1</span><span class="hljs-params">(<span class="hljs-keyword">double</span> x)</span>  </span></span><br><span class="line"><span class="hljs-function"></span>&#123;  </span><br><span class="line">    <span class="hljs-keyword">return</span> x*x;  </span><br><span class="line">&#125;  </span><br><span class="line">   </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">double</span> <span class="hljs-title">func_2</span><span class="hljs-params">(<span class="hljs-keyword">double</span> x)</span>  </span></span><br><span class="line"><span class="hljs-function"></span>&#123;  </span><br><span class="line">    <span class="hljs-keyword">return</span> x*x*x;  </span><br><span class="line">&#125;  </span><br><span class="line">   </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">()</span>  </span></span><br><span class="line"><span class="hljs-function"></span>&#123;  </span><br><span class="line">    <span class="hljs-built_in">printf</span>(<span class="hljs-string">"%lf\n"</span>, Calculate(func_1, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>));  </span><br><span class="line">    <span class="hljs-built_in">printf</span>(<span class="hljs-string">"%lf\n"</span>, Calculate(func_2, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>));  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于积分函数，将被积函数作为函数形参，可以实现对不同函数的积分，具有很高的灵活性。</p>
+<p>再比如库函数<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">```c</span><br><span class="line">// qsort函数</span><br><span class="line">void qsort(void *base,size_t nmemb,size_t size , int(*compar)(const void *,const void *));</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span><span class="hljs-meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span><span class="hljs-meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">typedef</span> <span class="hljs-title">int</span><span class="hljs-params">(*compare)</span><span class="hljs-params">(<span class="hljs-keyword">const</span> <span class="hljs-keyword">void</span>* elem1,<span class="hljs-keyword">const</span> <span class="hljs-keyword">void</span>* elem2)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 排序规则1，按个位数从小到达排</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">mycompare</span><span class="hljs-params">(<span class="hljs-keyword">const</span> <span class="hljs-keyword">void</span>* elem1,<span class="hljs-keyword">const</span> <span class="hljs-keyword">void</span>* elem2)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">    <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> *p1,*p2;</span><br><span class="line">    p1 = (<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span>*)elem1;<span class="hljs-comment">//"*elem1"非法</span></span><br><span class="line">    p2 = (<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span>*)elem2;</span><br><span class="line">    <span class="hljs-keyword">return</span> (*p1%<span class="hljs-number">10</span>)-(*p2%<span class="hljs-number">10</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 排序规则2，按从小到大排</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">mycompare1</span><span class="hljs-params">(<span class="hljs-keyword">const</span> <span class="hljs-keyword">void</span>* elem1,<span class="hljs-keyword">const</span> <span class="hljs-keyword">void</span>* elem2)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">    <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> *p1,*p2;</span><br><span class="line">    p1 = (<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span>*)elem1;<span class="hljs-comment">//"*elem1"非法</span></span><br><span class="line">    p2 = (<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span>*)elem2;</span><br><span class="line">    <span class="hljs-keyword">return</span> p1 - p2;</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> NUM 5</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">    compare p1, p2;</span><br><span class="line">    p1 = mycompare;</span><br><span class="line">    p2 = mycompare1;</span><br><span class="line">    </span><br><span class="line">    <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> a[NUM]=&#123;<span class="hljs-number">8</span>,<span class="hljs-number">123</span>,<span class="hljs-number">11</span>,<span class="hljs-number">10</span>,<span class="hljs-number">4</span>&#125;;</span><br><span class="line">    qsort(a,NUM,<span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span>),p1);</span><br><span class="line">    <span class="hljs-keyword">for</span>(<span class="hljs-keyword">int</span> i=<span class="hljs-number">0</span>;i&lt;NUM;i++)</span><br><span class="line">        <span class="hljs-built_in">printf</span>(<span class="hljs-string">"%d"</span>,a[i]);</span><br><span class="line">    <span class="hljs-built_in">printf</span>(<span class="hljs-string">"\n"</span>);</span><br><span class="line">    qsort(a,NUM,<span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span>),p2);</span><br><span class="line">    <span class="hljs-keyword">for</span>(<span class="hljs-keyword">int</span> i=<span class="hljs-number">0</span>;i&lt;NUM;i++)</span><br><span class="line">        <span class="hljs-built_in">printf</span>(<span class="hljs-string">"%d"</span>,a[i]);</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果如下：</p>
+<p>10 11 123 4 8<br>4 8 10 11 123 </p>
+<p>通过函数指针，qsor实现了不同的排序功能。</p>
+</li>
+<li><p><strong>回调函数</strong></p>
+<p>回调函数的百度百科定义如下：</p>
+<p><strong>回调函数就是一个通过函数指针调用的函数</strong>。如果你把函数的指针（地址）作为参数传递给另一个函数，当这个指针被用来调用其所指向的函数时，我们就说这是回调函数。回调函数不是由该函数的实现方直接调用，而是在特定的事件或条件发生时由另外的一方调用的，用于对该事件或条件进行响应。</p>
+<p>例如在网络库中的事件回调函数，当发生特定的事件，如读或写事件，调用不同的事件处理函数。如下为模仿muduo库写的一个简单网络库的代码片段，只不过这里利用function代替了函数指针，道理是一样的。</p>
+<figure class="highlight c++ hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment"> * std::function 的实例能存储、复制及调用任何可调用 (Callable) 目标</span></span><br><span class="line"><span class="hljs-comment"> * ——函数、 lambda 表达式、 bind 表达式或其他函数对象，</span></span><br><span class="line"><span class="hljs-comment"> * 还有指向成员函数指针和指向数据成员指针。</span></span><br><span class="line"><span class="hljs-comment"> * 用function代替函数指针，实现函数回调，灵活性更高</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-comment">//typedef boost::function&lt;void()&gt; EventCallback;</span></span><br><span class="line"><span class="hljs-keyword">using</span> EventCallback = <span class="hljs-built_in">std</span>::function&lt;<span class="hljs-keyword">void</span>()&gt;; <span class="hljs-comment">//使用using写法以及使用标准库的function</span></span><br><span class="line"><span class="hljs-keyword">using</span> ReadEventCallback = <span class="hljs-built_in">std</span>::function&lt;<span class="hljs-keyword">void</span>(muduo::Timestamp)&gt;;</span><br><span class="line">   </span><br><span class="line"><span class="hljs-comment">// 构造函数</span></span><br><span class="line">Channel(EventLoop* loop, <span class="hljs-keyword">int</span> fd);</span><br><span class="line">   </span><br><span class="line"><span class="hljs-comment">// 事件分发</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">handleEvent</span><span class="hljs-params">(muduo::Timestamp receiveTime)</span></span>;</span><br><span class="line">   </span><br><span class="line"><span class="hljs-comment">// 设置读、写、错误的回调函数</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setReadCallback</span><span class="hljs-params">(<span class="hljs-keyword">const</span> ReadEventCallback&amp; cb)</span> </span>&#123;</span><br><span class="line">    readCallback_ = cb;</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setWriteCallback</span><span class="hljs-params">(<span class="hljs-keyword">const</span> EventCallback&amp; cb)</span> </span>&#123;</span><br><span class="line">    writeCallback_ = cb;</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setErrorCallback</span><span class="hljs-params">(<span class="hljs-keyword">const</span> EventCallback&amp; cb)</span> </span>&#123;</span><br><span class="line">    errorCallback_ = cb;</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setCloseCallback</span><span class="hljs-params">(<span class="hljs-keyword">const</span> EventCallback&amp; cb)</span> </span>&#123;</span><br><span class="line">    closeCallback_ = cb;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<ol start="3">
+<li><p><strong>实现C语言多态</strong></p>
+<p><strong>C++实现多态</strong></p>
+<p>封装、继承、多态是C++的三大特性，C++可以很容易地实现多态。<strong>我们知道的在C++中会维护一张虚函数表，我们知道父类的指针或者引用是可以指向子类对象的。如果一个父类的指针或者引用调用父类的虚函数则该父类的指针会在自己的虚函数表中查找自己的函数地址，如果该父类对象的指针或者引用指向的是子类的对象，而且该子类已经重写了父类的虚函数，则该指针会调用子类的已经重写的虚函数。</strong></p>
+<p>C++实现多态代码如下：</p>
+<figure class="highlight c++ hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">//c++中的多态</span></span><br><span class="line"> </span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">A</span>  // 父类</span></span><br><span class="line"><span class="hljs-class">&#123;</span></span><br><span class="line"><span class="hljs-keyword">public</span>:</span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">fun</span><span class="hljs-params">()</span> <span class="hljs-comment">// 虚函数实现</span></span></span><br><span class="line"><span class="hljs-function">  </span>&#123;</span><br><span class="line">    <span class="hljs-built_in">cout</span> &lt;&lt; <span class="hljs-string">"Base A::fun() "</span> &lt;&lt; <span class="hljs-built_in">endl</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"> </span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">B</span>:</span><span class="hljs-keyword">public</span> A  <span class="hljs-comment">// 子类公有继承</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="hljs-keyword">public</span>:</span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">fun</span><span class="hljs-params">()</span> <span class="hljs-comment">// 虚函数实现,子类中virtual关键字可以没有</span></span></span><br><span class="line"><span class="hljs-function">  </span>&#123;</span><br><span class="line">    <span class="hljs-built_in">cout</span> &lt;&lt; <span class="hljs-string">"Derived B::fun() "</span> &lt;&lt; <span class="hljs-built_in">endl</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"> </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">Test1</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  A a; <span class="hljs-comment">// 基类对象</span></span><br><span class="line">  B b; <span class="hljs-comment">// 派生类对象</span></span><br><span class="line"> </span><br><span class="line">  A* pa = &amp;a; <span class="hljs-comment">// 父类指针指向父类对象</span></span><br><span class="line">  pa-&gt;fun();  <span class="hljs-comment">// 调用父类的函数</span></span><br><span class="line"> </span><br><span class="line">  pa = &amp;b;    <span class="hljs-comment">// 父类指针指向子类对象，多态实现</span></span><br><span class="line">  pa-&gt;fun();  <span class="hljs-comment">// 调用派生类同名函数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>C语言实现多态</strong></p>
+<p>我们知道在C语言中是没有class类这个概念的，但是有struct结构体，我们可以考虑使用struct来模拟；但是在C语言的结构体内部是没有成员函数的，如何实现这个父结构体和子结构体共有的函数呢？我们可以考虑使用函数指针来模拟。但是这样处理存在一个缺陷就是：父子各自的函数指针之间指向的不是类似C++中维护的虚函数表而是一块物理内存，如果模拟的函数过多的话就会不容易维护了。</p>
+<p>C语言实现多态的代码如下：</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">//C实现动态，用到函数指针</span></span><br><span class="line"> </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">typedef</span> <span class="hljs-title">void</span><span class="hljs-params">(*FUN)</span><span class="hljs-params">()</span></span>;<span class="hljs-comment">//重定义一个函数指针类型</span></span><br><span class="line"> </span><br><span class="line"><span class="hljs-comment">//父类</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Base</span> </span></span><br><span class="line"><span class="hljs-class">&#123;</span></span><br><span class="line">  FUN _f;</span><br><span class="line">&#125;;</span><br><span class="line"> </span><br><span class="line"><span class="hljs-comment">//子类</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Derived</span></span></span><br><span class="line"><span class="hljs-class">&#123;</span></span><br><span class="line">  Base _b;<span class="hljs-comment">//在子类中定义一个基类的对象即可实现对父类的继承</span></span><br><span class="line">&#125;;</span><br><span class="line">  </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">FunB</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  <span class="hljs-built_in">printf</span>(<span class="hljs-string">"%s\n"</span>, <span class="hljs-string">"Base::fun()"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">FunD</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  <span class="hljs-built_in">printf</span>(<span class="hljs-string">"%s\n"</span>, <span class="hljs-string">"Derived::fun()"</span>);</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">Test2</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  Base b;     <span class="hljs-comment">// 父类对象</span></span><br><span class="line">  Derived d;  <span class="hljs-comment">// 子类对象</span></span><br><span class="line"> </span><br><span class="line">  b._f = FunB;</span><br><span class="line">  d._b._f = FunD;</span><br><span class="line"> </span><br><span class="line">  Base *pb = &amp;b;  <span class="hljs-comment">// 父类指针指向父类对象</span></span><br><span class="line">  pb-&gt;_f();       <span class="hljs-comment">// 调用父类同名函数</span></span><br><span class="line"> </span><br><span class="line">  pb = (Base *)&amp;d;<span class="hljs-comment">// 让父类指针指向子类的对象,由于类型不匹配所以要进行强转</span></span><br><span class="line">  pb-&gt;_f();       <span class="hljs-comment">// 调用子类同名函数</span></span><br><span class="line"> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a><strong>小结</strong></h3><p>通过分析，可以得出，Redis的链表结构中，函数指针是为了实现多态链表。</p>
+<p>函数指针是非常有用的，它的作用如下：</p>
+<ul>
+<li>提高灵活性</li>
+<li>实现回调函数</li>
+<li>实现C语言多态</li>
+</ul>
+
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipay.jpg" alt="支付宝"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/09/08/Redis设计与实现（一）简单动态字符串/">
+                <span class="level-item">Redis设计与实现（一）简单动态字符串（SDS）</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="lv-container" data-id="city" data-uid="MTAyMC80NDEzMi8yMDY2Nw==">
+    <script type="text/javascript">
+        (function(d, s) {
+            var j, e = d.getElementsByTagName(s)[0];
+
+            if (typeof LivereTower === 'function') { return; }
+
+            j = d.createElement(s);
+            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+            j.async = true;
+
+            e.parentNode.insertBefore(j, e);
+        })(document, 'script');
+    </script>
+    <noscript> Please activate JavaScript for write a comment in LiveRe</noscript>
+</div>
+
+    </div>
+</div>
+</div>
+                
+
+<!-- 粘贴的部分 -->
+                          <!-- 修改，可选保留的栏 -->
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
+    
+        
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#函数指针">
+        <span class="has-mr-6">1</span>
+        <span>函数指针</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#函数指针的使用">
+        <span class="has-mr-6">1.1</span>
+        <span>函数指针的使用</span>
+        </a></li><li>
+        <a class="is-flex" href="#函数指针的好处">
+        <span class="has-mr-6">1.2</span>
+        <span>函数指针的好处</span>
+        </a></li><li>
+        <a class="is-flex" href="#小结">
+        <span class="has-mr-6">1.3</span>
+        <span>小结</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/头像.png" alt="冯泡泡">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        冯泡泡
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        快乐地撸撸代码，安静地品品生活
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>China,Chengdu</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        27
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        4
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        5
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/EdwardFeng1995" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/EdwardFeng1995">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Facebook" href="https://facebook.com">
+                
+                <i class="fab fa-facebook"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Twitter" href="https://twitter.com">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://dribbble.com">
+                
+                <i class="fab fa-dribbble"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/C-C/">
+            <span class="level-start">
+                <span class="level-item">C/C++</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Linux/">
+            <span class="level-start">
+                <span class="level-item">Linux</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/计算机网络/">
+            <span class="level-start">
+                <span class="level-item">计算机网络</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            标签云
+        </h3>
+        <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/操作系统/" style="font-size: 16.67px;">操作系统</a> <a href="/tags/网络编程/" style="font-size: 20px;">网络编程</a>
+    </div>
+</div>
+
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="https://hexo.io" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">Hexo</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">hexo.io</span>
+                    </span>
+                </a>
+            </li>
+        
+            <li>
+                <a class="level is-mobile" href="https://github.com/ppoffice" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">PPOffice</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">github.com</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen is-sticky">
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            
+            <a href="/2019/09/09/函数指针/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="函数指针">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-09T08:37:00.000Z">2019-09-09</time></div>
+                    <a href="/2019/09/09/函数指针/" class="has-link-black-ter is-size-6">函数指针</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/C-C/">C/C++</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/09/08/Redis设计与实现（一）简单动态字符串/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（一）简单动态字符串（SDS）">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-08T12:05:00.000Z">2019-09-08</time></div>
+                    <a href="/2019/09/08/Redis设计与实现（一）简单动态字符串/" class="has-link-black-ter is-size-6">Redis设计与实现（一）简单动态字符串（SDS）</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/08/22/MySQL高性能的索引策略/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/数据库.jpeg" alt="MySQL高性能的索引策略">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-08-22T08:23:00.000Z">2019-08-22</time></div>
+                    <a href="/2019/08/22/MySQL高性能的索引策略/" class="has-link-black-ter is-size-6">MySQL高性能的索引策略</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/08/18/MySQL索引底层实现原理/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/MySQL索引.png" alt="MySQL索引底层实现原理">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-08-18T07:39:00.000Z">2019-08-18</time></div>
+                    <a href="/2019/08/18/MySQL索引底层实现原理/" class="has-link-black-ter is-size-6">MySQL索引底层实现原理</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/07/12/《现代操作系统》学习笔记-7-内存管理/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="《现代操作系统》学习笔记(7)--内存管理">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-07-12T08:32:00.000Z">2019-07-12</time></div>
+                    <a href="/2019/07/12/《现代操作系统》学习笔记-7-内存管理/" class="has-link-black-ter is-size-6">《现代操作系统》学习笔记(7)--内存管理</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">12</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MySQL/">
+                        <span class="tag">MySQL</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Redis/">
+                        <span class="tag">Redis</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/http/">
+                        <span class="tag">http</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/操作系统/">
+                        <span class="tag">操作系统</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/网络编程/">
+                        <span class="tag">网络编程</span>
+                        <span class="tag is-grey">12</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+
+                
+
+<!-- 粘贴的部分 -->
+
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/冯泡泡.png" alt="函数指针" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2019 冯泡泡&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+<div align="center">
+<span id="busuanzi_container_site_pv">
+    &nbsp;&nbsp;&#10052;&nbsp;&nbsp;访问量：<span id="busuanzi_value_site_pv"></span>
+</span>
+
+<span id="busuanzi_container_site_uv">
+  &nbsp;&nbsp;&#10052;&nbsp;&nbsp;访客数：<span id="busuanzi_value_site_uv"></span>
+</span>
+
+<br>
+	
+	<span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>
+            <script>
+                var now = new Date(); 
+                function createtime() { 
+                    var grt= new Date("3/1/2019 12:00:00");//此处修改你的建站时间或者网站上线时间 
+                    now.setTime(now.getTime()+250); 
+                    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days); 
+                    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours); 
+                    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum); 
+                    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;} 
+                    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum); 
+                    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;} 
+                    document.getElementById("timeDate").innerHTML = "Security Run For "+dnum+" 天 "; 
+                    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒"; 
+                } 
+            setInterval("createtime()",250);
+</script>
+
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+</div></footer>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+
+    <!-- 雪花特效 -->
+    <script type="text/javascript">
+      var windowWidth = $(window).width();
+      if (windowWidth > 480) {
+        document.write('<script type="text/javascript" src="/js/src/snow.js"><\/script>');
+      }
+    </script>
+
+</body>
+</html>
