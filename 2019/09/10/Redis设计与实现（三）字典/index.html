@@ -19,7 +19,7 @@
 <meta property="og:description" content="字典   字典，又称符号表（symbol table）、关联数组（associative array）或者映射（map），是一种用于保存键值对（key-value pair）的抽象数据结构。 字典在 Redis 中的应用相当广泛，比如 Redis 的数据库就是使用字典来作为底层实现的，对数据库的增、删、查、改操作也是构建在对字典的操作之上的。 字典还是哈希键的底层实现之一： 当一个哈希键包含的键值">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://edwardfeng1995.github.io/images/redis.jpeg">
-<meta property="og:updated_time" content="2019-09-10T08:30:15.602Z">
+<meta property="og:updated_time" content="2019-09-10T08:32:32.812Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Redis设计与实现（三）字典">
 <meta name="twitter:description" content="字典   字典，又称符号表（symbol table）、关联数组（associative array）或者映射（map），是一种用于保存键值对（key-value pair）的抽象数据结构。 字典在 Redis 中的应用相当广泛，比如 Redis 的数据库就是使用字典来作为底层实现的，对数据库的增、删、查、改操作也是构建在对字典的操作之上的。 字典还是哈希键的底层实现之一： 当一个哈希键包含的键值">
@@ -182,7 +182,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    18 分钟 读完 (大约 2631 个字)
+                    18 分钟 读完 (大约 2632 个字)
                 </span>
                 
                 
@@ -200,6 +200,7 @@ var _hmt = _hmt || [];
 <p>字典，又称符号表（symbol table）、关联数组（associative array）或者映射（map），是一种用于保存键值对（key-value pair）的抽象数据结构。</p>
 <p>字典在 Redis 中的应用相当广泛，比如 Redis 的数据库就是使用字典来作为底层实现的，对数据库的增、删、查、改操作也是构建在对字典的操作之上的。</p>
 <p>字典还是哈希键的底层实现之一： 当一个哈希键包含的键值对比较多， 又或者键值对中的元素都是比较长的字符串时， Redis 就会使用字典作为哈希键的底层实现。</p>
+<a id="more"></a>
 <table><td bgcolor="green"><h3><font color="white">3.1 字典的实现 </font></h3></td></table>
 
 <p>Redis的字典使用哈希表作底层实现，一个哈希表里面可以有多个哈希表节点，而每个哈希表节点就保存了字典中的一个键值对。</p>
