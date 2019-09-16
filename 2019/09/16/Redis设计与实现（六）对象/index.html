@@ -5,24 +5,24 @@
     <meta name="baidu-site-verification" content="N3g7rXsOdw">
 <meta name="baidu-site-verification" content="KOiSXH19Wh">
 <meta charset="utf-8">
-<title>Redis设计与实现（一）简单动态字符串（SDS） - 冯泡泡的博客</title>
+<title>Redis设计与实现（六）对象 - 冯泡泡的博客</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
 
 
-    <meta name="description" content="简单动态字符串（SDS）1.1 SDS的定义SDS的数据结构如下： 1234567891011struct sdshdr &amp;#123;    // 记录buf数组中已使用字节的数量    // 等于SDS所保存字符串的长度    int len;       	// 记录buf数组中未使用字节的数量    int free;        // 字节数组，用于保存字符串    char buf[]">
+    <meta name="description" content="对象Redis 并没有直接使用这些数据结构来实现键值对数据库， 而是基于这些数据结构创建了一个对象系统， 这个系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种类型的对象， 每种对象都用到了至少一种我们前面所介绍的数据结构。 使用对象的好处：  通过这五种不同类型的对象， Redis 可以在执行命令之前， 根据对象的类型来判断一个对象是否可以执行给定的命令。 可以针对不同的使用场">
 <meta name="keywords" content="Redis">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Redis设计与实现（一）简单动态字符串（SDS）">
-<meta property="og:url" content="https://edwardfeng1995.github.io/2019/09/08/Redis设计与实现（一）简单动态字符串/index.html">
+<meta property="og:title" content="Redis设计与实现（六）对象">
+<meta property="og:url" content="https://edwardfeng1995.github.io/2019/09/16/Redis设计与实现（六）对象/index.html">
 <meta property="og:site_name" content="冯泡泡的博客">
-<meta property="og:description" content="简单动态字符串（SDS）1.1 SDS的定义SDS的数据结构如下： 1234567891011struct sdshdr &amp;#123;    // 记录buf数组中已使用字节的数量    // 等于SDS所保存字符串的长度    int len;       	// 记录buf数组中未使用字节的数量    int free;        // 字节数组，用于保存字符串    char buf[]">
+<meta property="og:description" content="对象Redis 并没有直接使用这些数据结构来实现键值对数据库， 而是基于这些数据结构创建了一个对象系统， 这个系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种类型的对象， 每种对象都用到了至少一种我们前面所介绍的数据结构。 使用对象的好处：  通过这五种不同类型的对象， Redis 可以在执行命令之前， 根据对象的类型来判断一个对象是否可以执行给定的命令。 可以针对不同的使用场">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://edwardfeng1995.github.io/images/redis.jpeg">
-<meta property="og:updated_time" content="2019-09-08T12:17:42.737Z">
+<meta property="og:updated_time" content="2019-09-16T09:07:49.396Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Redis设计与实现（一）简单动态字符串（SDS）">
-<meta name="twitter:description" content="简单动态字符串（SDS）1.1 SDS的定义SDS的数据结构如下： 1234567891011struct sdshdr &amp;#123;    // 记录buf数组中已使用字节的数量    // 等于SDS所保存字符串的长度    int len;       	// 记录buf数组中未使用字节的数量    int free;        // 字节数组，用于保存字符串    char buf[]">
+<meta name="twitter:title" content="Redis设计与实现（六）对象">
+<meta name="twitter:description" content="对象Redis 并没有直接使用这些数据结构来实现键值对数据库， 而是基于这些数据结构创建了一个对象系统， 这个系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种类型的对象， 每种对象都用到了至少一种我们前面所介绍的数据结构。 使用对象的好处：  通过这五种不同类型的对象， Redis 可以在执行命令之前， 根据对象的类型来判断一个对象是否可以执行给定的命令。 可以针对不同的使用场">
 <meta name="twitter:image" content="https://edwardfeng1995.github.io/images/redis.jpeg">
 
 
@@ -108,7 +108,7 @@ var _hmt = _hmt || [];
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/冯泡泡.png" alt="Redis设计与实现（一）简单动态字符串（SDS）" height="28">
+                <img src="/images/冯泡泡.png" alt="Redis设计与实现（六）对象" height="28">
             
             </a>
         </div>
@@ -164,7 +164,7 @@ var _hmt = _hmt || [];
     
     <div class="card-image">
         <span class="image is-7by1">
-            <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（一）简单动态字符串（SDS）">
+            <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（六）对象">
         </span>
     </div>
     
@@ -172,7 +172,7 @@ var _hmt = _hmt || [];
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-09-08T12:05:00.000Z">2019-09-08</time>
+                <time class="level-item has-text-grey" datetime="2019-09-16T09:00:00.000Z">2019-09-16</time>
                 
                 <div class="level-item">
                 <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
@@ -182,7 +182,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    14 分钟 读完 (大约 2071 个字)
+                    30 分钟 读完 (大约 4438 个字)
                 </span>
                 
                 
@@ -191,177 +191,284 @@ var _hmt = _hmt || [];
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                Redis设计与实现（一）简单动态字符串（SDS）
+                Redis设计与实现（六）对象
             
         </h1>
         <div class="content">
-            <h2 id="简单动态字符串（SDS）"><a href="#简单动态字符串（SDS）" class="headerlink" title="简单动态字符串（SDS）"></a><strong>简单动态字符串（SDS）</strong></h2><h3 id="1-1-SDS的定义"><a href="#1-1-SDS的定义" class="headerlink" title="1.1 SDS的定义"></a><strong>1.1 SDS的定义</strong></h3><p>SDS的数据结构如下：</p>
-<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">sdshdr</span> &#123;</span></span><br><span class="line">    <span class="hljs-comment">// 记录buf数组中已使用字节的数量</span></span><br><span class="line">    <span class="hljs-comment">// 等于SDS所保存字符串的长度</span></span><br><span class="line">    <span class="hljs-keyword">int</span> len;</span><br><span class="line">    </span><br><span class="line">   	<span class="hljs-comment">// 记录buf数组中未使用字节的数量</span></span><br><span class="line">    <span class="hljs-keyword">int</span> <span class="hljs-built_in">free</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="hljs-comment">// 字节数组，用于保存字符串</span></span><br><span class="line">    <span class="hljs-keyword">char</span> buf[];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+            <h1 id="对象"><a href="#对象" class="headerlink" title="对象"></a>对象</h1><p>Redis 并没有直接使用这些数据结构来实现键值对数据库， 而是基于这些数据结构创建了一个对象系统， 这个系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种类型的对象， 每种对象都用到了至少一种我们前面所介绍的数据结构。</p>
+<p>使用对象的好处：</p>
+<ul>
+<li>通过这五种不同类型的对象， Redis 可以在执行命令之前， 根据对象的类型来判断一个对象是否可以执行给定的命令。</li>
+<li>可以针对不同的使用场景， 为对象设置多种不同的数据结构实现， 从而优化对象在不同场景下的使用效率。</li>
+<li>Redis 的对象系统还实现了基于引用计数技术的内存回收机制： 当程序不再使用某个对象的时候， 这个对象所占用的内存就会被自动释放； 另外， Redis 还通过引用计数技术实现了对象共享机制， 这一机制可以在适当的条件下， 通过让多个数据库键共享同一个对象来节约内存。</li>
+<li>Redis 的对象带有访问时间记录信息， 该信息可以用于计算数据库键的空转时长， 在服务器启用了 <code>maxmemory</code> 功能的情况下， 空转时长较大的那些键可能会优先被服务器删除。</li>
+</ul>
 <a id="more"></a>
-<p><strong>SDS 遵循 C 字符串以空字符结尾的惯例</strong>， 保存空字符的 <code>1</code> 字节空间不计算在 SDS 的 <code>len</code> 属性里面， 并且为空字符分配额外的 <code>1</code> 字节空间，以及添加空字符到字符串末尾等操作都是由 SDS 函数自动完成的，好处是可以直接重用一部分C字符串函数库里面的函数。</p>
-<h3 id="1-2-SDS与C字符串的区别"><a href="#1-2-SDS与C字符串的区别" class="headerlink" title="1.2 SDS与C字符串的区别"></a><strong>1.2 SDS与C字符串的区别</strong></h3><h4 id="1-2-1-常数复杂度获取字符串长度"><a href="#1-2-1-常数复杂度获取字符串长度" class="headerlink" title="1.2.1 常数复杂度获取字符串长度"></a><strong>1.2.1 常数复杂度获取字符串长度</strong></h4><ul>
-<li>C字符串获取自身长度需要遍历整个字符串，时间复杂度为O(N)。</li>
-</ul>
-<ul>
-<li>SDS在len属性中记录了SDS本身的长度，时间复杂度为O(1)。</li>
-<li>设置和更新SDS长度的工作是由SDS的API在执行时自动完成的，使用SDS无须进行任何手动修改长度的工作。</li>
-<li><strong>SDS确保了获取字符串长度的工作不会成为Redis的性能瓶颈。</strong></li>
-</ul>
-<h4 id="1-2-2-杜绝缓冲区溢出"><a href="#1-2-2-杜绝缓冲区溢出" class="headerlink" title="1.2.2 杜绝缓冲区溢出"></a><strong>1.2.2 杜绝缓冲区溢出</strong></h4><ul>
-<li><p>C 字符串不记录自身长度带来的另一个问题是容易造成缓冲区溢出（buffer overflow）。</p>
-</li>
-<li><p>与 C 字符串不同,SDS 的空间分配策略完全杜绝了发生缓冲区溢出的可能性：<strong>当 SDS API 需要对 SDS 进行修改时，API 会先检查 SDS 的空间是否满足修改所需的要求，如果不满足的话，API 会自动将 SDS 的空间扩展至执行修改所需的大小，然后才执行实际的修改操作， 所以使用 SDS 既不需要手动修改 SDS 的空间大小，也不会出现前面所说的缓冲区溢出问题。</strong></p>
-</li>
-</ul>
-<h4 id="1-2-3-减少修改字符串时带来的内存重分配次数"><a href="#1-2-3-减少修改字符串时带来的内存重分配次数" class="headerlink" title="1.2.3 减少修改字符串时带来的内存重分配次数"></a><strong>1.2.3 减少修改字符串时带来的内存重分配次数</strong></h4><ul>
-<li><p>对于C字符串，<strong>长度和底层数组长度始终差1</strong>，每次增长和缩短都要进行一次内存重分配：</p>
-<ul>
-<li>增长字符串可能造成缓冲区溢出；</li>
-<li>缩短字符串可能造成内存泄露。</li>
-</ul>
-</li>
-<li><p>对于SDS，<strong>buf数组的长度不一定就是字符数量加一， 数组里面可以包含未使用的字节， 而这些字节的数量就由 SDS 的 <code>free</code> 属性记录。</strong></p>
-</li>
-</ul>
-<p>通过未使用空间， SDS 实现了空间预分配和惰性空间释放两种优化策略：</p>
-<ul>
-<li><p><strong>1. 空间预分配：</strong></p>
-<p>空间预分配用于优化 SDS 的字符串增长操作：<strong>当 SDS 的 API 对一个 SDS 进行修改，并且需要对 SDS 进行空间扩展的时候，程序不仅会为 SDS 分配修改所必须要的空间，还会为 SDS 分配额外的未使用空间。</strong></p>
-<p>额外分配的未使用空间数量由下公式决定：</p>
-<ul>
-<li>如果对 SDS 进行修改之后，SDS 的长度（也即是 <code>len</code> 属性的值）将小于 <code>1 MB</code> ，那么程序分配和 <code>len</code>属性同样大小的未使用空间；</li>
-<li>如果对 SDS 进行修改之后，SDS 的长度将大于等于 <code>1 MB</code> ，那么程序会分配 <code>1 MB</code> 的未使用空间。</li>
-</ul>
-</li>
-<li><p><strong>2. 惰性空间释放：</strong></p>
-<p>惰性空间释放用于优化 SDS 的字符串缩短操作：<strong>当 SDS 的 API 需要缩短 SDS 保存的字符串时，程序并不立即使用内存重分配来回收缩短后多出来的字节，而是使用 <code>free</code> 属性将这些字节的数量记录起来，并等待将来使用。</strong></p>
-</li>
-</ul>
-<h4 id="1-2-4-二进制安全"><a href="#1-2-4-二进制安全" class="headerlink" title="1.2.4 二进制安全"></a><strong>1.2.4 二进制安全</strong></h4><ul>
-<li>对于C字符串，除了末尾，字符串里不能包含空字符，只能保存文本数据，不能保存二进制数据。</li>
-<li>对于SDS，不仅用于保存文本数据，且API都是二进制安全的，所有SDS API都会以处理二进制的方式来处理SDS存放在buf数组里的数据。因此，SDS的buf属性称为字节数组——不是用来保存字符，而是保存一系列二进制数据。</li>
-<li>SDS使用len属性而不是空字符来判断字符串是都结束，所以其中可以包含空字符。</li>
-</ul>
-<h4 id="1-2-5-兼容部分C字符串函数"><a href="#1-2-5-兼容部分C字符串函数" class="headerlink" title="1.2.5 兼容部分C字符串函数"></a><strong>1.2.5 兼容部分C字符串函数</strong></h4><p>虽然 SDS 的 API 都是二进制安全的，但它们一样遵循 C 字符串以空字符结尾的惯例：<strong>这些 API 总会将 SDS 保存的数据的末尾设置为空字符，并且总会在为 <code>buf</code> 数组分配空间时多分配一个字节来容纳这个空字符</strong>， 这是为了让那些保存文本数据的 SDS 可以重用一部分 <code>&lt;string.h&gt;</code> 库定义的函数。</p>
-<h4 id="1-2-6-总结"><a href="#1-2-6-总结" class="headerlink" title="1.2.6 总结"></a><strong>1.2.6 总结</strong></h4><table>
+<h2 id="7-1-对象的类型与编码"><a href="#7-1-对象的类型与编码" class="headerlink" title="7.1 对象的类型与编码"></a>7.1 对象的类型与编码</h2><p>Redis 使用对象来表示数据库中的键和值， 每次当我们在 Redis 的数据库中新创建一个键值对时， 我们至少会创建两个对象， 一个对象用作键值对的键（键对象）， 另一个对象用作键值对的值（值对象）。</p>
+<p>对象的数据结构如下：</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">typedef</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">redisObject</span> &#123;</span></span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 类型</span></span><br><span class="line">    <span class="hljs-keyword">unsigned</span> type:<span class="hljs-number">4</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 编码</span></span><br><span class="line">    <span class="hljs-keyword">unsigned</span> encoding:<span class="hljs-number">4</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 指向底层实现数据结构的指针</span></span><br><span class="line">    <span class="hljs-keyword">void</span> *ptr;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// ...</span></span><br><span class="line"></span><br><span class="line">&#125; robj;</span><br></pre></td></tr></table></figure>
+<h3 id="7-1-1-类型"><a href="#7-1-1-类型" class="headerlink" title="7.1.1 类型"></a>7.1.1 类型</h3><p>对象的 <code>type</code> 属性记录了对象的类型， 这个属性的值可以是表 7-1 列出的常量的其中一个。</p>
+<hr>
+<p>表 7-1 对象的类型</p>
+<table>
 <thead>
 <tr>
-<th style="text-align:left">C 字符串</th>
-<th style="text-align:left">SDS</th>
+<th style="text-align:left">类型常量</th>
+<th style="text-align:left">对象的名称</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:left">获取字符串长度的复杂度为 O(N) 。</td>
-<td style="text-align:left">获取字符串长度的复杂度为 O(1) 。</td>
+<td style="text-align:left"><code>REDIS_STRING</code></td>
+<td style="text-align:left">字符串对象</td>
 </tr>
 <tr>
-<td style="text-align:left">API 是不安全的，可能会造成缓冲区溢出。</td>
-<td style="text-align:left">API 是安全的，不会造成缓冲区溢出。</td>
+<td style="text-align:left"><code>REDIS_LIST</code></td>
+<td style="text-align:left">列表对象</td>
 </tr>
 <tr>
-<td style="text-align:left">修改字符串长度 <code>N</code> 次必然需要执行 <code>N</code> 次内存重分配。</td>
-<td style="text-align:left">修改字符串长度 <code>N</code> 次最多需要执行 <code>N</code> 次内存重分配。</td>
+<td style="text-align:left"><code>REDIS_HASH</code></td>
+<td style="text-align:left">哈希对象</td>
 </tr>
 <tr>
-<td style="text-align:left">只能保存文本数据。</td>
-<td style="text-align:left">可以保存文本或者二进制数据。</td>
+<td style="text-align:left"><code>REDIS_SET</code></td>
+<td style="text-align:left">集合对象</td>
 </tr>
 <tr>
-<td style="text-align:left">可以使用所有 <code>&lt;string.h&gt;</code> 库中的函数。</td>
-<td style="text-align:left">可以使用一部分 <code>&lt;string.h&gt;</code> 库中的函数。</td>
+<td style="text-align:left"><code>REDIS_ZSET</code></td>
+<td style="text-align:left">有序集合对象</td>
 </tr>
 </tbody>
 </table>
-<h3 id="1-3-SDS-API"><a href="#1-3-SDS-API" class="headerlink" title="1.3 SDS API"></a><strong>1.3 SDS API</strong></h3><table>
+<p>对于 Redis 数据库保存的键值对来说， 键总是一个字符串对象， 而值则可以是字符串对象、列表对象、哈希对象、集合对象或者有序集合对象的其中一种。</p>
+<h2 id="7-1-2-编码和底层实现"><a href="#7-1-2-编码和底层实现" class="headerlink" title="7.1.2 编码和底层实现"></a>7.1.2 编码和底层实现</h2><p>对象的 <code>ptr</code> 指针指向对象的底层实现数据结构， 而这些数据结构由对象的 <code>encoding</code> 属性决定。</p>
+<p>表 7-2 对象的编码</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">编码常量</th>
+<th style="text-align:left">编码所对应的底层数据结构</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>REDIS_ENCODING_INT</code></td>
+<td style="text-align:left"><code>long</code> 类型的整数</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_ENCODING_EMBSTR</code></td>
+<td style="text-align:left"><code>embstr</code> 编码的简单动态字符串</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_ENCODING_RAW</code></td>
+<td style="text-align:left">简单动态字符串</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_ENCODING_HT</code></td>
+<td style="text-align:left">字典</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_ENCODING_LINKEDLIST</code></td>
+<td style="text-align:left">双端链表</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_ENCODING_ZIPLIST</code></td>
+<td style="text-align:left">压缩列表</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_ENCODING_INTSET</code></td>
+<td style="text-align:left">整数集合</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_ENCODING_SKIPLIST</code></td>
+<td style="text-align:left">跳跃表和字典</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p>表 7-3 不同类型和编码的对象</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">类型</th>
+<th style="text-align:left">编码</th>
+<th style="text-align:left">对象</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>REDIS_STRING</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_INT</code></td>
+<td style="text-align:left">使用整数值实现的字符串对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_STRING</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_EMBSTR</code></td>
+<td style="text-align:left">使用 <code>embstr</code> 编码的简单动态字符串实现的字符串对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_STRING</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_RAW</code></td>
+<td style="text-align:left">使用简单动态字符串实现的字符串对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_LIST</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_ZIPLIST</code></td>
+<td style="text-align:left">使用压缩列表实现的列表对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_LIST</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_LINKEDLIST</code></td>
+<td style="text-align:left">使用双端链表实现的列表对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_HASH</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_ZIPLIST</code></td>
+<td style="text-align:left">使用压缩列表实现的哈希对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_HASH</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_HT</code></td>
+<td style="text-align:left">使用字典实现的哈希对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_SET</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_INTSET</code></td>
+<td style="text-align:left">使用整数集合实现的集合对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_SET</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_HT</code></td>
+<td style="text-align:left">使用字典实现的集合对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_ZSET</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_ZIPLIST</code></td>
+<td style="text-align:left">使用压缩列表实现的有序集合对象。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>REDIS_ZSET</code></td>
+<td style="text-align:left"><code>REDIS_ENCODING_SKIPLIST</code></td>
+<td style="text-align:left">使用跳跃表和字典实现的有序集合对象。</td>
+</tr>
+</tbody>
+</table>
+<p>通过 <code>encoding</code> 属性来设定对象所使用的编码， 而不是为特定类型的对象关联一种固定的编码， 极大地提升了 Redis 的灵活性和效率， 因为 Redis 可以根据不同的使用场景来为一个对象设置不同的编码， 从而优化对象在某一场景下的效率。</p>
+<h2 id="7-2-字符串对象"><a href="#7-2-字符串对象" class="headerlink" title="7.2 字符串对象"></a>7.2 字符串对象</h2><p>如果一个字符串对象保存的是整数值，并且这个整数值可以用long类型在表示，那么字符串对象会将整数值保存在字符串对象结构的ptr属性里面。</p>
+<p>如果字符串对象保存的是一个字符串值，并且这个字符串值的长度大于39字节（4.0.9版本不是39），那么字符串对象将使用一个简单动态字符串（SDS）来保存这个份字符串值，并将对象的编码设置为raw。</p>
+<p>如果字符串对象保存的是一个字符串值，并且这个字符串值的长度小于等于39字节，那么字符串对象将使用embstr编码的方式来保存这个字符串值。</p>
+<p><strong>raw编码会调用两次内存分配函数来创建redisObject结构和sdshdr结构，而embstr编码则通过调用一次内存分配函数来分配一块连续的空间。</strong></p>
+<h2 id="7-3-列表对象"><a href="#7-3-列表对象" class="headerlink" title="7.3 列表对象"></a>7.3 列表对象</h2><p>列表对象的编码可以是 <code>ziplist</code> 或者 <code>linkedlist</code> 。</p>
+<p><code>ziplist</code> 编码的列表对象使用压缩列表作为底层实现， 每个压缩列表节点（entry）保存了一个列表元素。</p>
+<p><code>linkedlist</code> 编码的列表对象使用双端链表作为底层实现， 每个双端链表节点（node）都保存了一个字符串对象， 而每个字符串对象都保存了一个列表元素。</p>
+<p>字符串对象是 Redis 五种类型的对象中唯一一种会被其他四种类型对象嵌套的对象。</p>
+<p>当列表对象可以同时满足以下两个条件时， 列表对象使用 <code>ziplist</code> 编码：</p>
+<ol>
+<li>列表对象保存的所有字符串元素的长度都小于 <code>64</code> 字节；</li>
+<li>列表对象保存的元素数量小于 <code>512</code> 个；</li>
+</ol>
+<h2 id="7-4-哈希对象"><a href="#7-4-哈希对象" class="headerlink" title="7.4 哈希对象"></a>7.4 哈希对象</h2><p>哈希对象的编码可以是 <code>ziplist</code> 或者 <code>hashtable</code> 。</p>
+<p><code>ziplist</code> 编码的哈希对象使用压缩列表作为底层实现， 每当有新的键值对要加入到哈希对象时， 程序会先将保存了键的压缩列表节点推入到压缩列表表尾， 然后再将保存了值的压缩列表节点推入到压缩列表表尾， 因此：</p>
+<ul>
+<li>保存了同一键值对的两个节点总是紧挨在一起， 保存键的节点在前， 保存值的节点在后；</li>
+<li>先添加到哈希对象中的键值对会被放在压缩列表的表头方向， 而后来添加到哈希对象中的键值对会被放在压缩列表的表尾方向。</li>
+</ul>
+<p><code>hashtable</code> 编码的哈希对象使用字典作为底层实现， 哈希对象中的每个键值对都使用一个字典键值对来保存：</p>
+<ul>
+<li>字典的每个键都是一个字符串对象， 对象中保存了键值对的键；</li>
+<li>字典的每个值都是一个字符串对象， 对象中保存了键值对的值。</li>
+</ul>
+<p>当哈希对象可以同时满足以下两个条件时， 哈希对象使用 <code>ziplist</code> 编码：</p>
+<ol>
+<li>哈希对象保存的所有键值对的键和值的字符串长度都小于 <code>64</code> 字节；</li>
+<li>哈希对象保存的键值对数量小于 <code>512</code> 个；</li>
+</ol>
+<h2 id="7-5-集合对象"><a href="#7-5-集合对象" class="headerlink" title="7.5 集合对象"></a>7.5 集合对象</h2><p>集合对象的编码可以是 <code>intset</code> 或者 <code>hashtable</code> 。</p>
+<p><code>intset</code> 编码的集合对象使用整数集合作为底层实现， 集合对象包含的所有元素都被保存在整数集合里面。</p>
+<p><code>hashtable</code> 编码的集合对象使用字典作为底层实现， 字典的每个键都是一个字符串对象， 每个字符串对象包含了一个集合元素， 而字典的值则全部被设置为 <code>NULL</code> 。</p>
+<p>当集合对象可以同时满足以下两个条件时， 对象使用 <code>intset</code> 编码：</p>
+<ol>
+<li>集合对象保存的所有元素都是整数值；</li>
+<li>集合对象保存的元素数量不超过 <code>512</code> 个；</li>
+</ol>
+<h2 id="7-6-有序集合对象"><a href="#7-6-有序集合对象" class="headerlink" title="7.6 有序集合对象"></a>7.6 有序集合对象</h2><p>有序集合的编码可以是 <code>ziplist</code> 或者 <code>skiplist</code> 。</p>
+<p><code>ziplist</code> 编码的有序集合对象使用压缩列表作为底层实现， 每个集合元素使用两个紧挨在一起的压缩列表节点来保存， 第一个节点保存元素的成员（member）， 而第二个元素则保存元素的分值（score）。</p>
+<p>压缩列表内的集合元素按分值从小到大进行排序， 分值较小的元素被放置在靠近表头的方向， 而分值较大的元素则被放置在靠近表尾的方向。</p>
+<p><code>skiplist</code> 编码的有序集合对象使用 <code>zset</code> 结构作为底层实现， 一个 <code>zset</code> 结构同时包含一个字典和一个跳跃表：</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">typedef</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">zset</span> &#123;</span></span><br><span class="line"></span><br><span class="line">    zskiplist *zsl;</span><br><span class="line"></span><br><span class="line">    dict *dict;  <span class="hljs-comment">// 字典，创建从成员到分值的映射</span></span><br><span class="line"></span><br><span class="line">&#125; zset;</span><br></pre></td></tr></table></figure>
+<p><code>zset</code> 结构中的 <code>zsl</code> 跳跃表按分值从小到大保存了所有集合元素， 每个跳跃表节点都保存了一个集合元素： 跳跃表节点的 <code>object</code> 属性保存了元素的成员， 而跳跃表节点的 <code>score</code> 属性则保存了元素的分值。 通过这个跳跃表， 程序可以对有序集合进行范围型操作， 比如 ZRANK、 ZRANGE 等命令就是基于跳跃表 API 来实现的。</p>
+<p>除此之外， <code>zset</code> 结构中的 <code>dict</code> 字典为有序集合创建了一个从成员到分值的映射， 字典中的每个键值对都保存了一个集合元素： 字典的键保存了元素的成员， 而字典的值则保存了元素的分值。 通过这个字典， 程序可以用 O(1) 复杂度查找给定成员的分值， ZSCORE 命令就是根据这一特性实现的， 而很多其他有序集合命令都在实现的内部用到了这一特性。</p>
+<p>有序集合每个元素的成员都是一个字符串对象， 而每个元素的分值都是一个 <code>double</code> 类型的浮点数。 值得一提的是， 虽然 <code>zset</code> 结构同时使用跳跃表和字典来保存有序集合元素， 但这两种数据结构都会通过指针来共享相同元素的成员和分值， 所以同时使用跳跃表和字典来保存集合元素不会产生任何重复成员或者分值， 也不会因此而浪费额外的内存。</p>
+<p>当有序集合对象可以同时满足以下两个条件时， 对象使用 <code>ziplist</code> 编码：</p>
+<ol>
+<li>有序集合保存的元素数量小于 <code>128</code> 个；</li>
+<li>有序集合保存的所有元素成员的长度都小于 <code>64</code> 字节；</li>
+</ol>
+<h2 id="7-7-类型检查与命令多态"><a href="#7-7-类型检查与命令多态" class="headerlink" title="7.7 类型检查与命令多态"></a>7.7 类型检查与命令多态</h2><p>Redis 中用于操作键的命令基本上可以分为两种类型：</p>
+<ul>
+<li>命令可以对任何类型的键执行， 比如说 DEL 命令、 EXPIRE 命令、 RENAME 命令、 TYPE 命令、 OBJECT 命令， 等等。</li>
+<li>另一种命令只能对特定类型的键执行。</li>
+</ul>
+<h3 id="7-7-1-类型检查的实现"><a href="#7-7-1-类型检查的实现" class="headerlink" title="7.7.1 类型检查的实现"></a>7.7.1 类型检查的实现</h3><p><strong>为了确保只有指定类型的键可以执行某些特定的命令， 在执行一个类型特定的命令之前， Redis 会先检查输入键的类型是否正确， 然后再决定是否执行给定的命令。</strong></p>
+<p>类型特定命令所进行的类型检查是通过 <code>redisObject</code> 结构的 <code>type</code> 属性来实现的：</p>
+<ul>
+<li>在执行一个类型特定命令之前， 服务器会先检查输入数据库键的值对象是否为执行命令所需的类型， 如果是的话， 服务器就对键执行指定的命令；</li>
+<li>否则， 服务器将拒绝执行命令， 并向客户端返回一个类型错误。</li>
+</ul>
+<h3 id="7-7-2-多态命令的实现"><a href="#7-7-2-多态命令的实现" class="headerlink" title="7.7.2 多态命令的实现"></a>7.7.2 多态命令的实现</h3><p>Redis 除了会根据值对象的类型来判断键是否能够执行指定命令之外， 还会根据值对象的编码方式， 选择正确的命令实现代码来执行命令。</p>
+<p>DEL 、 EXPIRE 等命令和 LLEN 等命令的区别在于， 前者是基于类型的多态 —— 一个命令可以同时用于处理多种不同类型的键， 而后者是基于编码的多态 —— 一个命令可以同时用于处理多种不同编码。</p>
+<p>下图是对一个键执行LLEN命令的过程。</p>
+<p><img src="/images/Redis设计与实现/6-1.png" alt="LLEN命令的执行过程"></p>
+<h2 id="7-8-内存回收"><a href="#7-8-内存回收" class="headerlink" title="7.8 内存回收"></a>7.8 内存回收</h2><p>因为 C 语言并不具备自动的内存回收功能， 所以 Redis 在自己的对象系统中构建了一个引用计数技术实现的内存回收机制， 通过这一机制， 程序可以通过跟踪对象的引用计数信息， 在适当的时候自动释放对象并进行内存回收。</p>
+<p>每个对象的引用计数信息由 <code>redisObject</code> 结构的 <code>refcount</code> 属性记录。</p>
+<p>对象的引用计数信息会随着对象的使用状态而不断变化：</p>
+<ul>
+<li>在创建一个新对象时， 引用计数的值会被初始化为 <code>1</code> ；</li>
+<li>当对象被一个新程序使用时， 它的引用计数值会被增一；</li>
+<li>当对象不再被一个程序使用时， 它的引用计数值会被减一；</li>
+<li>当对象的引用计数值变为 <code>0</code> 时， 对象所占用的内存会被释放。</li>
+</ul>
+<p>表 7-4 修改对象引用计数的 API</p>
+<table>
 <thead>
 <tr>
 <th style="text-align:left">函数</th>
 <th style="text-align:left">作用</th>
-<th style="text-align:left">时间复杂度</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:left"><code>sdsnew</code></td>
-<td style="text-align:left">创建一个包含给定 C 字符串的 SDS 。</td>
-<td style="text-align:left">O(N) ， <code>N</code> 为给定 C 字符串的长度。</td>
+<td style="text-align:left"><code>incrRefCount</code></td>
+<td style="text-align:left">将对象的引用计数值增一。</td>
 </tr>
 <tr>
-<td style="text-align:left"><code>sdsempty</code></td>
-<td style="text-align:left">创建一个不包含任何内容的空 SDS 。</td>
-<td style="text-align:left">O(1)</td>
+<td style="text-align:left"><code>decrRefCount</code></td>
+<td style="text-align:left">将对象的引用计数值减一， 当对象的引用计数值等于 <code>0</code> 时， 释放对象。</td>
 </tr>
 <tr>
-<td style="text-align:left"><code>sdsfree</code></td>
-<td style="text-align:left">释放给定的 SDS 。</td>
-<td style="text-align:left">O(1)</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdslen</code></td>
-<td style="text-align:left">返回 SDS 的已使用空间字节数。</td>
-<td style="text-align:left">这个值可以通过读取 SDS 的 <code>len</code> 属性来直接获得， 复杂度为 O(1) 。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdsavail</code></td>
-<td style="text-align:left">返回 SDS 的未使用空间字节数。</td>
-<td style="text-align:left">这个值可以通过读取 SDS 的 <code>free</code> 属性来直接获得， 复杂度为 O(1) 。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdsdup</code></td>
-<td style="text-align:left">创建一个给定 SDS 的副本（copy）。</td>
-<td style="text-align:left">O(N) ， <code>N</code> 为给定 SDS 的长度。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdsclear</code></td>
-<td style="text-align:left">清空 SDS 保存的字符串内容。</td>
-<td style="text-align:left">因为惰性空间释放策略，复杂度为 O(1) 。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdscat</code></td>
-<td style="text-align:left">将给定 C 字符串拼接到 SDS 字符串的末尾。</td>
-<td style="text-align:left">O(N) ， <code>N</code> 为被拼接 C 字符串的长度。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdscatsds</code></td>
-<td style="text-align:left">将给定 SDS 字符串拼接到另一个 SDS 字符串的末尾。</td>
-<td style="text-align:left">O(N) ， <code>N</code> 为被拼接 SDS 字符串的长度。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdscpy</code></td>
-<td style="text-align:left">将给定的 C 字符串复制到 SDS 里面， 覆盖 SDS 原有的字符串。</td>
-<td style="text-align:left">O(N) ， <code>N</code> 为被复制 C 字符串的长度。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdsgrowzero</code></td>
-<td style="text-align:left">用空字符将 SDS 扩展至给定长度。</td>
-<td style="text-align:left">O(N) ， <code>N</code> 为扩展新增的字节数。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdsrange</code></td>
-<td style="text-align:left">保留 SDS 给定区间内的数据， 不在区间内的数据会被覆盖或清除。</td>
-<td style="text-align:left">O(N) ， <code>N</code> 为被保留数据的字节数。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdstrim</code></td>
-<td style="text-align:left">接受一个 SDS 和一个 C 字符串作为参数， 从 SDS 左右两端分别移除所有在 C 字符串中出现过的字符。</td>
-<td style="text-align:left">O(M*N) ， <code>M</code> 为 SDS 的长度， <code>N</code> 为给定 C 字符串的长度。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>sdscmp</code></td>
-<td style="text-align:left">对比两个 SDS 字符串是否相同。</td>
-<td style="text-align:left">O(N) ， <code>N</code> 为两个 SDS 中较短的那个 SDS 的长度。</td>
+<td style="text-align:left"><code>resetRefCount</code></td>
+<td style="text-align:left">将对象的引用计数值设置为 <code>0</code> ， 但并不释放对象， 这个函数通常在需要重新设置对象的引用计数值时使用。</td>
 </tr>
 </tbody>
 </table>
-<h3 id="1-4-重点小结"><a href="#1-4-重点小结" class="headerlink" title="1.4 重点小结"></a><strong>1.4 重点小结</strong></h3><p>Redis只会使用C字符串作为字面量，在大多数情况下，Redis使用SDS（简单动态字符串）作为字符串表示。</p>
-<p>比起C字符串，SDS具有以下优点：</p>
-<ul>
-<li>常数复杂度获取字符串长度。</li>
-<li>杜绝缓冲区溢出。</li>
-<li>减少修改字符串长度时所需的内存充分配次数。</li>
-<li>二进制安全。</li>
-<li>兼容部分C字符串函数。</li>
+<h2 id="7-9-对象共享"><a href="#7-9-对象共享" class="headerlink" title="7.9 对象共享"></a>7.9 对象共享</h2><p>除了用于实现引用计数内存回收机制之外， 对象的引用计数属性还带有对象共享的作用。</p>
+<p>在 Redis 中， 让多个键共享同一个值对象需要执行以下两个步骤：</p>
+<ol>
+<li>将数据库键的值指针指向一个现有的值对象；</li>
+<li>将被共享的值对象的引用计数增一。</li>
+</ol>
+<p>Redis 会在初始化服务器时， 创建一万个字符串对象， 这些对象包含了从 <code>0</code> 到 <code>9999</code> 的所有整数值， 当服务器需要用到值为 <code>0</code>到 <code>9999</code> 的字符串对象时， 服务器就会使用这些共享对象， 而不是新创建对象。</p>
+<p><strong>Redis只对包含整数值的字符串对象进行共享。</strong></p>
+<h2 id="7-10-对象的空转时长"><a href="#7-10-对象的空转时长" class="headerlink" title="7.10 对象的空转时长"></a>7.10 对象的空转时长</h2><p>除了前面介绍过的 <code>type</code> 、 <code>encoding</code> 、 <code>ptr</code> 和 <code>refcount</code> 四个属性之外， <code>redisObject</code> 结构包含的最后一个属性为 <code>lru</code> 属性， 该属性记录了对象最后一次被命令程序访问的时间：</p>
+<p>OBJECT IDLETIME 命令可以打印出给定键的空转时长， 这一空转时长就是通过将当前时间减去键的值对象的 <code>lru</code> 时间计算得出的。</p>
+<p> 如果服务器打开了 <code>maxmemory</code> 选项， 并且服务器用于回收内存的算法为 <code>volatile-lru</code> 或者 <code>allkeys-lru</code> ， 那么当服务器占用的内存数超过了 <code>maxmemory</code> 选项所设置的上限值时， 空转时长较高的那部分键会优先被服务器释放， 从而回收内存。</p>
+<h2 id="7-11-总结"><a href="#7-11-总结" class="headerlink" title="7.11 总结"></a>7.11 总结</h2><ul>
+<li>Redis 数据库中的每个键值对的键和值都是一个对象。</li>
+<li>Redis 共有字符串、列表、哈希、集合、有序集合五种类型的对象， 每种类型的对象至少都有两种或以上的编码方式， 不同的编码可以在不同的使用场景上优化对象的使用效率。</li>
+<li>服务器在执行某些命令之前， 会先检查给定键的类型能否执行指定的命令， 而检查一个键的类型就是检查键的值对象的类型。</li>
+<li>Redis 的对象系统带有引用计数实现的内存回收机制， 当一个对象不再被使用时， 该对象所占用的内存就会被自动释放。</li>
+<li>Redis 会共享值为 <code>0</code> 到 <code>9999</code> 的字符串对象。</li>
+<li>对象会记录自己的最后一次被访问的时间， 这个时间可以用于计算对象的空转时间。</li>
 </ul>
 
         </div>
@@ -410,17 +517,10 @@ var _hmt = _hmt || [];
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
-        <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/2019/09/09/函数指针/">
-                <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">函数指针</span>
-            </a>
-        </div>
-        
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/2019/08/22/MySQL高性能的索引策略/">
-                <span class="level-item">MySQL高性能的索引策略</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/09/16/Redis设计与实现（五）整数集合与压缩列表/">
+                <span class="level-item">Redis设计与实现（五）整数集合与压缩列表</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -472,49 +572,69 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#简单动态字符串（SDS）">
+        <a class="is-flex" href="#对象">
         <span class="has-mr-6">1</span>
-        <span>简单动态字符串（SDS）</span>
+        <span>对象</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#1-1-SDS的定义">
+        <a class="is-flex" href="#7-1-对象的类型与编码">
         <span class="has-mr-6">1.1</span>
-        <span>1.1 SDS的定义</span>
-        </a></li><li>
-        <a class="is-flex" href="#1-2-SDS与C字符串的区别">
-        <span class="has-mr-6">1.2</span>
-        <span>1.2 SDS与C字符串的区别</span>
+        <span>7.1 对象的类型与编码</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#1-2-1-常数复杂度获取字符串长度">
-        <span class="has-mr-6">1.2.1</span>
-        <span>1.2.1 常数复杂度获取字符串长度</span>
-        </a></li><li>
-        <a class="is-flex" href="#1-2-2-杜绝缓冲区溢出">
-        <span class="has-mr-6">1.2.2</span>
-        <span>1.2.2 杜绝缓冲区溢出</span>
-        </a></li><li>
-        <a class="is-flex" href="#1-2-3-减少修改字符串时带来的内存重分配次数">
-        <span class="has-mr-6">1.2.3</span>
-        <span>1.2.3 减少修改字符串时带来的内存重分配次数</span>
-        </a></li><li>
-        <a class="is-flex" href="#1-2-4-二进制安全">
-        <span class="has-mr-6">1.2.4</span>
-        <span>1.2.4 二进制安全</span>
-        </a></li><li>
-        <a class="is-flex" href="#1-2-5-兼容部分C字符串函数">
-        <span class="has-mr-6">1.2.5</span>
-        <span>1.2.5 兼容部分C字符串函数</span>
-        </a></li><li>
-        <a class="is-flex" href="#1-2-6-总结">
-        <span class="has-mr-6">1.2.6</span>
-        <span>1.2.6 总结</span>
+        <a class="is-flex" href="#7-1-1-类型">
+        <span class="has-mr-6">1.1.1</span>
+        <span>7.1.1 类型</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#1-3-SDS-API">
-        <span class="has-mr-6">1.3</span>
-        <span>1.3 SDS API</span>
+        <a class="is-flex" href="#7-1-2-编码和底层实现">
+        <span class="has-mr-6">1.2</span>
+        <span>7.1.2 编码和底层实现</span>
         </a></li><li>
-        <a class="is-flex" href="#1-4-重点小结">
+        <a class="is-flex" href="#7-2-字符串对象">
+        <span class="has-mr-6">1.3</span>
+        <span>7.2 字符串对象</span>
+        </a></li><li>
+        <a class="is-flex" href="#7-3-列表对象">
         <span class="has-mr-6">1.4</span>
-        <span>1.4 重点小结</span>
+        <span>7.3 列表对象</span>
+        </a></li><li>
+        <a class="is-flex" href="#7-4-哈希对象">
+        <span class="has-mr-6">1.5</span>
+        <span>7.4 哈希对象</span>
+        </a></li><li>
+        <a class="is-flex" href="#7-5-集合对象">
+        <span class="has-mr-6">1.6</span>
+        <span>7.5 集合对象</span>
+        </a></li><li>
+        <a class="is-flex" href="#7-6-有序集合对象">
+        <span class="has-mr-6">1.7</span>
+        <span>7.6 有序集合对象</span>
+        </a></li><li>
+        <a class="is-flex" href="#7-7-类型检查与命令多态">
+        <span class="has-mr-6">1.8</span>
+        <span>7.7 类型检查与命令多态</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#7-7-1-类型检查的实现">
+        <span class="has-mr-6">1.8.1</span>
+        <span>7.7.1 类型检查的实现</span>
+        </a></li><li>
+        <a class="is-flex" href="#7-7-2-多态命令的实现">
+        <span class="has-mr-6">1.8.2</span>
+        <span>7.7.2 多态命令的实现</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#7-8-内存回收">
+        <span class="has-mr-6">1.9</span>
+        <span>7.8 内存回收</span>
+        </a></li><li>
+        <a class="is-flex" href="#7-9-对象共享">
+        <span class="has-mr-6">1.10</span>
+        <span>7.9 对象共享</span>
+        </a></li><li>
+        <a class="is-flex" href="#7-10-对象的空转时长">
+        <span class="has-mr-6">1.11</span>
+        <span>7.10 对象的空转时长</span>
+        </a></li><li>
+        <a class="is-flex" href="#7-11-总结">
+        <span class="has-mr-6">1.12</span>
+        <span>7.11 总结</span>
         </a></li></ul></li></ul>
         </div>
     </div>
@@ -986,7 +1106,7 @@ var _hmt = _hmt || [];
             <div class="level-start has-text-centered-mobile">
                 <a class="footer-logo is-block has-mb-6" href="/">
                 
-                    <img src="/images/冯泡泡.png" alt="Redis设计与实现（一）简单动态字符串（SDS）" height="28">
+                    <img src="/images/冯泡泡.png" alt="Redis设计与实现（六）对象" height="28">
                 
                 </a>
                 <p class="is-size-7">

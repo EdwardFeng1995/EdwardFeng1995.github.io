@@ -158,6 +158,132 @@ var _hmt = _hmt || [];
     <div class="card">
     
     <div class="card-image">
+        <a href="/2019/09/16/Redis设计与实现（六）对象/" class="image is-7by1">
+            <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（六）对象">
+        </a>
+    </div>
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-09-16T09:00:00.000Z">2019-09-16</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    30 分钟 读完 (大约 4438 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2019/09/16/Redis设计与实现（六）对象/">Redis设计与实现（六）对象</a>
+            
+        </h1>
+        <div class="content">
+            <h1 id="对象"><a href="#对象" class="headerlink" title="对象"></a>对象</h1><p>Redis 并没有直接使用这些数据结构来实现键值对数据库， 而是基于这些数据结构创建了一个对象系统， 这个系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种类型的对象， 每种对象都用到了至少一种我们前面所介绍的数据结构。</p>
+<p>使用对象的好处：</p>
+<ul>
+<li>通过这五种不同类型的对象， Redis 可以在执行命令之前， 根据对象的类型来判断一个对象是否可以执行给定的命令。</li>
+<li>可以针对不同的使用场景， 为对象设置多种不同的数据结构实现， 从而优化对象在不同场景下的使用效率。</li>
+<li>Redis 的对象系统还实现了基于引用计数技术的内存回收机制： 当程序不再使用某个对象的时候， 这个对象所占用的内存就会被自动释放； 另外， Redis 还通过引用计数技术实现了对象共享机制， 这一机制可以在适当的条件下， 通过让多个数据库键共享同一个对象来节约内存。</li>
+<li>Redis 的对象带有访问时间记录信息， 该信息可以用于计算数据库键的空转时长， 在服务器启用了 <code>maxmemory</code> 功能的情况下， 空转时长较大的那些键可能会优先被服务器删除。</li>
+</ul>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2019/09/16/Redis设计与实现（六）对象/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
+        
+        
+    </div>
+</div>
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-image">
+        <a href="/2019/09/16/Redis设计与实现（五）整数集合与压缩列表/" class="image is-7by1">
+            <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（五）整数集合与压缩列表">
+        </a>
+    </div>
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-09-16T08:00:00.000Z">2019-09-16</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    22 分钟 读完 (大约 3286 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2019/09/16/Redis设计与实现（五）整数集合与压缩列表/">Redis设计与实现（五）整数集合与压缩列表</a>
+            
+        </h1>
+        <div class="content">
+            <h1 id="整数集合"><a href="#整数集合" class="headerlink" title="整数集合"></a>整数集合</h1><p>整数集合（intset）是集合键的底层实现之一： 当一个集合只包含整数值元素， 并且这个集合的元素数量不多时， Redis 就会使用整数集合作为集合键的底层实现。</p>
+<h2 id="5-1-整数集合的实现"><a href="#5-1-整数集合的实现" class="headerlink" title="5.1 整数集合的实现"></a>5.1 整数集合的实现</h2><p>整数集合（intset）是 Redis 用于保存整数值的集合抽象数据结构， 它可以保存类型为 <code>int16_t</code> 、 <code>int32_t</code> 或者 <code>int64_t</code> 的整数值， 并且保证集合中不会出现重复元素。</p>
+<p>整数集合的数据结构如下：</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">typedef</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">intset</span> &#123;</span></span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 编码方式</span></span><br><span class="line">    <span class="hljs-keyword">uint32_t</span> encoding;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 集合包含的元素数量</span></span><br><span class="line">    <span class="hljs-keyword">uint32_t</span> length;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 保存元素的数组</span></span><br><span class="line">    <span class="hljs-keyword">int8_t</span> contents[];</span><br><span class="line"></span><br><span class="line">&#125; intset;</span><br></pre></td></tr></table></figure>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            <div class="level-start">
+                <div class="level-item">
+                <a class="button is-size-7 is-light" href="/2019/09/16/Redis设计与实现（五）整数集合与压缩列表/#more">阅读更多</a>
+                </div>
+            </div>
+        </div>
+        
+        
+    </div>
+</div>
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-image">
         <a href="/2019/09/11/Redis设计与实现（四）跳跃表/" class="image is-7by1">
             <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（四）跳跃表">
         </a>
@@ -623,127 +749,6 @@ var _hmt = _hmt || [];
 
 
 
-    <div class="card">
-    
-    <div class="card-content article ">
-        
-        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
-            <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-06-25T12:00:00.000Z">2019-06-25</time>
-                
-                <div class="level-item">
-                <a class="has-link-grey -link" href="/categories/计算机网络/">计算机网络</a>
-                </div>
-                
-                
-                <span class="level-item has-text-grey">
-                    
-                    
-                    16 分钟 读完 (大约 2332 个字)
-                </span>
-                
-                
-            </div>
-        </div>
-        
-        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
-            
-                <a class="has-link-black-ter" href="/2019/06/25/计算机网络-http协议/">计算机网络--http协议</a>
-            
-        </h1>
-        <div class="content">
-            <h1 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a><strong>HTTP</strong></h1><h2 id="1、HTTP概况"><a href="#1、HTTP概况" class="headerlink" title="1、HTTP概况"></a><strong>1、HTTP概况</strong></h2><p>Web的应用协议是<strong>超文本传输协议（HyperText Transfer Protocol，HTTP）</strong>，是Web的核心。HTTP由两个程序实现：一个客户程序和一个服务器程序。</p>
-<ul>
-<li><p><strong>Web页面：</strong>由对象组成</p>
-</li>
-<li><p><strong>对象：</strong>一个文件，诸如HTML文件、一个JPEG图形。。可通过URL地址寻址</p>
-</li>
-<li><p><strong>URL：</strong>统一资源定位符，互联网上的资源的地址，一般形式如下：</p>
-<p>&lt;协议&gt;://&lt;主机&gt;:&lt;端口&gt;/&lt;路径&gt;</p>
-</li>
-<li><p><strong>Web服务器：</strong>HTTP的服务端，用于存储Web对象，每个对象由URL寻址</p>
-</li>
-</ul>
-        </div>
-        
-        
-        <div class="level is-mobile">
-            <div class="level-start">
-                <div class="level-item">
-                <a class="button is-size-7 is-light" href="/2019/06/25/计算机网络-http协议/#more">阅读更多</a>
-                </div>
-            </div>
-        </div>
-        
-        
-    </div>
-</div>
-
-
-
-
-
-
-
-
-    <div class="card">
-    
-    <div class="card-content article ">
-        
-        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
-            <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-06-20T13:34:00.000Z">2019-06-20</time>
-                
-                <div class="level-item">
-                <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
-                </div>
-                
-                
-                <span class="level-item has-text-grey">
-                    
-                    
-                    15 分钟 读完 (大约 2245 个字)
-                </span>
-                
-                
-            </div>
-        </div>
-        
-        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
-            
-                <a class="has-link-black-ter" href="/2019/06/20/《现代操作系统》学习笔记-6-死锁/">《现代操作系统》学习笔记(6)--死锁</a>
-            
-        </h1>
-        <div class="content">
-            <h2 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h2><h3 id="1、资源"><a href="#1、资源" class="headerlink" title="1、资源"></a><strong>1、资源</strong></h3><p>资源就是随着时间的推移，必须能够获得、使用以及释放的任何东西。</p>
-<h4 id="1-1可抢占资源和不可抢占资源"><a href="#1-1可抢占资源和不可抢占资源" class="headerlink" title="1.1可抢占资源和不可抢占资源"></a><strong>1.1可抢占资源和不可抢占资源</strong></h4><ul>
-<li><p><strong>可抢占资源：</strong>可以送拥有它的进程中抢占而不会产生任何副作用，例如存储器。</p>
-</li>
-<li><p><strong>不可抢占资源：</strong>指在不引起相关的计算失败的情况下，无法把它从战占有它的进程出抢占过来。</p>
-</li>
-</ul>
-        </div>
-        
-        
-        <div class="level is-mobile">
-            <div class="level-start">
-                <div class="level-item">
-                <a class="button is-size-7 is-light" href="/2019/06/20/《现代操作系统》学习笔记-6-死锁/#more">阅读更多</a>
-                </div>
-            </div>
-        </div>
-        
-        
-    </div>
-</div>
-
-
-
-
-
-
-
-
 
     
 <div class="card card-transparent">
@@ -761,6 +766,8 @@ var _hmt = _hmt || [];
             <li><a class="pagination-link has-text-black-ter" href="/page/2/">2</a></li>
             
             <li><a class="pagination-link has-text-black-ter" href="/page/3/">3</a></li>
+            
+            <li><a class="pagination-link has-text-black-ter" href="/page/4/">4</a></li>
             
         </ul>
     </nav>
@@ -810,7 +817,7 @@ var _hmt = _hmt || [];
                         文章
                     </p>
                     <p class="title has-text-weight-normal">
-                        30
+                        32
                     </p>
                 </div>
             </div>
@@ -908,7 +915,7 @@ var _hmt = _hmt || [];
                 <span class="level-item">数据库</span>
             </span>
             <span class="level-end">
-                <span class="level-item tag">6</span>
+                <span class="level-item tag">8</span>
             </span>
         </a></li><li>
         <a class="level is-marginless" href="/categories/计算机网络/">
@@ -986,6 +993,44 @@ var _hmt = _hmt || [];
         
         <article class="media">
             
+            <a href="/2019/09/16/Redis设计与实现（六）对象/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（六）对象">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-16T09:00:00.000Z">2019-09-16</time></div>
+                    <a href="/2019/09/16/Redis设计与实现（六）对象/" class="has-link-black-ter is-size-6">Redis设计与实现（六）对象</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/09/16/Redis设计与实现（五）整数集合与压缩列表/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（五）整数集合与压缩列表">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-16T08:00:00.000Z">2019-09-16</time></div>
+                    <a href="/2019/09/16/Redis设计与实现（五）整数集合与压缩列表/" class="has-link-black-ter is-size-6">Redis设计与实现（五）整数集合与压缩列表</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
             <a href="/2019/09/11/Redis设计与实现（四）跳跃表/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（四）跳跃表">
@@ -1041,44 +1086,6 @@ var _hmt = _hmt || [];
             </div>
         </article>
         
-        <article class="media">
-            
-            <a href="/2019/09/09/函数指针/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="函数指针">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-09T08:37:00.000Z">2019-09-09</time></div>
-                    <a href="/2019/09/09/函数指针/" class="has-link-black-ter is-size-6">函数指针</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/C-C/">C/C++</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/09/08/Redis设计与实现（一）简单动态字符串/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（一）简单动态字符串（SDS）">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-08T12:05:00.000Z">2019-09-08</time></div>
-                    <a href="/2019/09/08/Redis设计与实现（一）简单动态字符串/" class="has-link-black-ter is-size-6">Redis设计与实现（一）简单动态字符串（SDS）</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
     </div>
 </div>
 
@@ -1097,7 +1104,7 @@ var _hmt = _hmt || [];
                     <span class="level-item">九月 2019</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">5</span>
+                    <span class="level-item tag">7</span>
                 </span>
             </a>
         </li>
@@ -1191,7 +1198,7 @@ var _hmt = _hmt || [];
                 <div class="control">
                     <a class="tags has-addons" href="/tags/Redis/">
                         <span class="tag">Redis</span>
-                        <span class="tag is-grey">4</span>
+                        <span class="tag is-grey">6</span>
                     </a>
                 </div>
                 
@@ -1245,6 +1252,44 @@ var _hmt = _hmt || [];
         
         <article class="media">
             
+            <a href="/2019/09/16/Redis设计与实现（六）对象/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（六）对象">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-16T09:00:00.000Z">2019-09-16</time></div>
+                    <a href="/2019/09/16/Redis设计与实现（六）对象/" class="has-link-black-ter is-size-6">Redis设计与实现（六）对象</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/09/16/Redis设计与实现（五）整数集合与压缩列表/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（五）整数集合与压缩列表">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-16T08:00:00.000Z">2019-09-16</time></div>
+                    <a href="/2019/09/16/Redis设计与实现（五）整数集合与压缩列表/" class="has-link-black-ter is-size-6">Redis设计与实现（五）整数集合与压缩列表</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
             <a href="/2019/09/11/Redis设计与实现（四）跳跃表/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（四）跳跃表">
@@ -1300,44 +1345,6 @@ var _hmt = _hmt || [];
             </div>
         </article>
         
-        <article class="media">
-            
-            <a href="/2019/09/09/函数指针/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="函数指针">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-09T08:37:00.000Z">2019-09-09</time></div>
-                    <a href="/2019/09/09/函数指针/" class="has-link-black-ter is-size-6">函数指针</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/C-C/">C/C++</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2019/09/08/Redis设计与实现（一）简单动态字符串/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/redis.jpeg" alt="Redis设计与实现（一）简单动态字符串（SDS）">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-09-08T12:05:00.000Z">2019-09-08</time></div>
-                    <a href="/2019/09/08/Redis设计与实现（一）简单动态字符串/" class="has-link-black-ter is-size-6">Redis设计与实现（一）简单动态字符串（SDS）</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/数据库/">数据库</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
     </div>
 </div>
 
@@ -1356,7 +1363,7 @@ var _hmt = _hmt || [];
                     <span class="level-item">九月 2019</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">5</span>
+                    <span class="level-item tag">7</span>
                 </span>
             </a>
         </li>
@@ -1450,7 +1457,7 @@ var _hmt = _hmt || [];
                 <div class="control">
                     <a class="tags has-addons" href="/tags/Redis/">
                         <span class="tag">Redis</span>
-                        <span class="tag is-grey">4</span>
+                        <span class="tag is-grey">6</span>
                     </a>
                 </div>
                 
