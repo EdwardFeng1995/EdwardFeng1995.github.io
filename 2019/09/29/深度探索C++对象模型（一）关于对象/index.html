@@ -5,25 +5,25 @@
     <meta name="baidu-site-verification" content="N3g7rXsOdw">
 <meta name="baidu-site-verification" content="KOiSXH19Wh">
 <meta charset="utf-8">
-<title>重载与重写 - 冯泡泡的博客</title>
+<title>深度探索C++对象模型（一）关于对象 - 冯泡泡的博客</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
 
 
-    <meta name="description" content="重载与重写之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。">
+    <meta name="description" content="1.1 C++对象模式C++对象模型在C++中，有两种class data member：static和nonstatic，以及三种class member functions：static、nonstatic和virtual。">
 <meta name="keywords" content="C&#x2F;C++">
 <meta property="og:type" content="article">
-<meta property="og:title" content="重载与重写">
-<meta property="og:url" content="https://edwardfeng1995.github.io/2019/03/17/重载与重写/index.html">
+<meta property="og:title" content="深度探索C++对象模型（一）关于对象">
+<meta property="og:url" content="https://edwardfeng1995.github.io/2019/09/29/深度探索C++对象模型（一）关于对象/index.html">
 <meta property="og:site_name" content="冯泡泡的博客">
-<meta property="og:description" content="重载与重写之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。">
+<meta property="og:description" content="1.1 C++对象模式C++对象模型在C++中，有两种class data member：static和nonstatic，以及三种class member functions：static、nonstatic和virtual。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://edwardfeng1995.github.io/images/og_image.png">
-<meta property="og:updated_time" content="2019-09-29T09:18:11.649Z">
+<meta property="og:image" content="https://edwardfeng1995.github.io/images/cpp.jpeg">
+<meta property="og:updated_time" content="2019-09-29T09:18:51.748Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="重载与重写">
-<meta name="twitter:description" content="重载与重写之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。">
-<meta name="twitter:image" content="https://edwardfeng1995.github.io/images/og_image.png">
+<meta name="twitter:title" content="深度探索C++对象模型（一）关于对象">
+<meta name="twitter:description" content="1.1 C++对象模式C++对象模型在C++中，有两种class data member：static和nonstatic，以及三种class member functions：static、nonstatic和virtual。">
+<meta name="twitter:image" content="https://edwardfeng1995.github.io/images/cpp.jpeg">
 
 
 
@@ -108,7 +108,7 @@ var _hmt = _hmt || [];
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/冯泡泡.png" alt="重载与重写" height="28">
+                <img src="/images/冯泡泡.png" alt="深度探索C++对象模型（一）关于对象" height="28">
             
             </a>
         </div>
@@ -140,6 +140,10 @@ var _hmt = _hmt || [];
                     
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -158,11 +162,17 @@ var _hmt = _hmt || [];
             <div class="columns">
                 <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
     
+    <div class="card-image">
+        <span class="image is-7by1">
+            <img class="thumbnail" src="/images/cpp.jpeg" alt="深度探索C++对象模型（一）关于对象">
+        </span>
+    </div>
+    
     <div class="card-content article ">
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-03-17T01:32:00.000Z">2019-03-17</time>
+                <time class="level-item has-text-grey" datetime="2019-09-29T09:00:00.000Z">2019-09-29</time>
                 
                 <div class="level-item">
                 <a class="has-link-grey -link" href="/categories/C-C/">C/C++</a>
@@ -172,7 +182,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    4 分钟 读完 (大约 632 个字)
+                    13 分钟 读完 (大约 1895 个字)
                 </span>
                 
                 
@@ -181,22 +191,79 @@ var _hmt = _hmt || [];
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                重载与重写
+                深度探索C++对象模型（一）关于对象
             
         </h1>
         <div class="content">
-            <h1 id="重载与重写"><a href="#重载与重写" class="headerlink" title="重载与重写"></a>重载与重写</h1><pre><code>之前一直没考虑过重载与重写这两个概念，脑子了只有重载这个概念。
-</code></pre><a id="more"></a>
-<pre><code>1、函数重载：
- （1）必须在同一类中进行；
- （2）子类无法继承父类的函数，父类同名函数将被名称覆盖；
- （3）重载是在编译期间根据参数类型和个数决定函数调用。
-2、函数重写
- （1）必须发生与父类与子类之间；
- （2）父类与子类中的函数必须有完全相同的原型；
- （3）使用virtual声明后能够产生多态（如果不使用virtual，那叫重定义），多态是在运行期间根据具体对象的类型决定函数的调用。
-  下面是示例代码：
-</code></pre> <figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line">    </span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> <span class="hljs-built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Parent</span></span></span><br><span class="line"><span class="hljs-class">&#123;</span></span><br><span class="line"><span class="hljs-keyword">public</span>:</span><br><span class="line">    <span class="hljs-comment">//同一类中为函数重载，这几个函数为重载</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">fun</span><span class="hljs-params">()</span></span>&#123;</span><br><span class="line">    <span class="hljs-built_in">cout</span>&lt;&lt;<span class="hljs-string">"fun of Parent"</span>&lt;&lt;<span class="hljs-built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">fun</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i)</span></span>&#123;</span><br><span class="line">        <span class="hljs-built_in">cout</span>&lt;&lt;<span class="hljs-string">"fun2 "</span>&lt;&lt;i&lt;&lt;<span class="hljs-built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">abc</span><span class="hljs-params">()</span></span>&#123;</span><br><span class="line">        <span class="hljs-built_in">cout</span>&lt;&lt;<span class="hljs-string">"abc"</span>&lt;&lt;<span class="hljs-built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="hljs-keyword">protected</span>:</span><br><span class="line"><span class="hljs-keyword">private</span>:</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Child</span>:</span><span class="hljs-keyword">public</span> Parent</span><br><span class="line">&#123;</span><br><span class="line"><span class="hljs-keyword">public</span>:</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">abc</span><span class="hljs-params">()</span></span>&#123;</span><br><span class="line">        <span class="hljs-built_in">cout</span>&lt;&lt;<span class="hljs-string">"abc"</span>&lt;&lt;<span class="hljs-built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">abc</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i)</span></span>&#123;</span><br><span class="line">        <span class="hljs-built_in">cout</span>&lt;&lt;i&lt;&lt;<span class="hljs-built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-comment">//如果没有下面的代码，那么可以通过子类对象调用父类函数，c1.fun();</span></span><br><span class="line"><span class="hljs-comment">//如果有下面代码，子类无法重载父类函数，父类同名函数将被覆盖，所以c1.fun()无法调用</span></span><br><span class="line"><span class="hljs-comment">//如果和父类原型相同，那么可以是重写。</span></span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">fun</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i,<span class="hljs-keyword">int</span> j)</span></span>&#123;</span><br><span class="line">        <span class="hljs-built_in">cout</span>&lt;&lt;<span class="hljs-string">"fun1 of Child "</span>&lt;&lt;i&lt;&lt;<span class="hljs-string">" "</span>&lt;&lt;j&lt;&lt;<span class="hljs-built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">fun</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i,<span class="hljs-keyword">int</span> j,<span class="hljs-keyword">int</span> n)</span></span>&#123;</span><br><span class="line">        <span class="hljs-built_in">cout</span>&lt;&lt;<span class="hljs-string">"fun2 of Child"</span>&lt;&lt;<span class="hljs-built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">    Child c1;</span><br><span class="line">    c1.Parent::fun();</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">      1、c++编译器 看到fun名字，在子类中已经存在了（名称覆盖），所以C++编译器不会去找父类的4个参</span></span><br><span class="line"><span class="hljs-comment">         数的func函数</span></span><br><span class="line"><span class="hljs-comment">      2、c++编译器只会在子类中查找fun函数，找到了两个fun，一个是2个参数的，一个是3个参数的</span></span><br><span class="line"><span class="hljs-comment">      3、c++编译器开始报错。。。</span></span><br><span class="line"><span class="hljs-comment">      4、若想调用，只能加作用域运算符</span></span><br><span class="line"><span class="hljs-comment">    */</span></span><br><span class="line"></span><br><span class="line">    c1.fun(<span class="hljs-number">1</span>);<span class="hljs-comment">//报错，没有匹配的函数，无法调用父类的fun(int i);</span></span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">//c1.fun();</span></span><br><span class="line">    <span class="hljs-comment">//fun函数的名字，在子类中发生了名称覆盖，子类的函数的名字，占用了父类的函数的名字的位置</span></span><br><span class="line">    <span class="hljs-comment">//因为子类中已经有了fun函数重载形式。。。。</span></span><br><span class="line">    <span class="hljs-comment">//编译器开始在子类中找fun函数。。。但是没有0个参数的fun函数</span></span><br><span class="line">    <span class="hljs-built_in">std</span>::<span class="hljs-built_in">cout</span> &lt;&lt; <span class="hljs-string">"Hello world"</span> &lt;&lt; <span class="hljs-built_in">std</span>::<span class="hljs-built_in">endl</span>;</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+            <h1 id="1-1-C-对象模式"><a href="#1-1-C-对象模式" class="headerlink" title="1.1 C++对象模式"></a>1.1 C++对象模式</h1><h2 id="C-对象模型"><a href="#C-对象模型" class="headerlink" title="C++对象模型"></a>C++对象模型</h2><p>在C++中，有两种class data member：static和nonstatic，以及三种class member functions：static、nonstatic和virtual。</p>
+<a id="more"></a>
+<p>对于下面这个class Point声明：</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Point</span> &#123;</span></span><br><span class="line"><span class="hljs-keyword">public</span>:</span><br><span class="line">    Point(<span class="hljs-keyword">float</span> xval);</span><br><span class="line">    <span class="hljs-keyword">virtual</span> ~Point();</span><br><span class="line"><span class="hljs-keyword">private</span>:</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">virtual</span> ostream&amp; <span class="hljs-title">print</span><span class="hljs-params">(ostream&amp; os)</span> <span class="hljs-keyword">const</span></span>;</span><br><span class="line">    <span class="hljs-keyword">float</span> _x;</span><br><span class="line">    <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> _point_count;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>Nonstatic data members 被配置于每一个class object之内，static data members 则被存放在个别的class object之外。Static 和 nonstaic function members 也被放在个别的class object 之外。Virtual functions 则以两个步骤支持：</p>
+<ul>
+<li>每一个class产生一堆指向virtual functions 的指针，放在虚函数表（virtual table，<strong>vtbl</strong>）。</li>
+<li>每一个class  object被安插一个指针，指向相关的virtual table。通常这个指针被称为<strong>vptr</strong></li>
+</ul>
+<p><img src="/images/深度探索C++对象模型/1-1.png" width="400" height="300" div align="center"></p>
+<p>这个模型的主要优点在于它的空间和存取时间的效率；主要缺点则是，如果应用程序代码本身未曾改变，但所用到的class objects的 nonstatic data members有所修改，那么哪些应用程序同样得重新编译。</p>
+<h3 id="加上继承"><a href="#加上继承" class="headerlink" title="加上继承"></a>加上继承</h3><p>C++支持单一继承，也支持多重继承，继承关系也可以指定为虚拟。</p>
+<p>在虚拟继承的情况下，base class不管在继承串链中被派生多少次，永远只会存在一个实例。</p>
+<p><strong>base class table模型：</strong></p>
+<p>base class table表中的每一个slot内含一个相关的base class地址。每一个class object内含一个bptr，它会被初始化，指向其base class table。</p>
+<ul>
+<li><p><strong>缺点：</strong>由于间接性而导致的空间和存取时间上的额外负担。</p>
+</li>
+<li><p><strong>优点：</strong></p>
+<ul>
+<li>在每一个class object中对于继承都有一致的表现方式：每一个class object中对于继承都有一致的表现方式：每一个class object都应该在某个固定位置上安放一个base table指针，与 base classes的大小或个数无关。</li>
+<li>无须改变class objects本身，就可以放大、缩小，或更改base class table。</li>
+</ul>
+</li>
+</ul>
+<p><img src="/images/深度探索C++对象模型/1-2.png" width="400" height="200" div align="center"></p>
+<h1 id="1-2-多态、指针的研究"><a href="#1-2-多态、指针的研究" class="headerlink" title="1.2 多态、指针的研究"></a>1.2 多态、指针的研究</h1><p>C++程序设计范式有三种：程序模型、抽象数据模型（ADT）、面向对象模型（OO）。</p>
+<p>混合不同的范式有严重的后果。看下面的例子：</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Library_materials thing1;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// class Book : public Library_materials &#123;...&#125;</span></span><br><span class="line">Book book;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// thing1不是一个Book，book被裁切了，thing1仍保有Library_materials</span></span><br><span class="line">thing1 = book;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 调用的是Library_materials::check_in()</span></span><br><span class="line">thing1.check_in();</span><br><span class="line"></span><br><span class="line">Library_materials &amp;thing2 = book;</span><br><span class="line"><span class="hljs-comment">// 调用的是Book::check_in()</span></span><br><span class="line">thing2.check_in();</span><br></pre></td></tr></table></figure>
+<p>在上面的程序中，只有通过<strong>指针或引用</strong>的间接处理，才支持OO程序设计所需的多态性质。thing2的定义是OO范式，而thing1的定义和运用是ADT范式，混用存在严重的问题。</p>
+<p>在OO范式中，原则上，被指定的object的真是类型在每一个特定执行点之前，是无法解析的。在C++中，只有通过<strong>指针和引用的操作才能完成。</strong>相反地，在ADT范式中，程序员处理的是一个拥有固定而单一类型的实例，它在编译时期就已经完全定义好了。</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 不确定类型</span></span><br><span class="line">Library_materials *px = retrieve_some_material();</span><br><span class="line">Library_materials &amp;rx = *px;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 确定的</span></span><br><span class="line">Library_materials dx = *px;</span><br></pre></td></tr></table></figure>
+<p><strong>C++以下列方法支持多态：</strong></p>
+<ul>
+<li>经由一组隐式的转化操作。例如把一个派生类指针转化为一个指向其public base type的指针。</li>
+<li>经由虚函数机制</li>
+<li>经由<code>dynamic_cast</code>和<code>typeid</code>运算符。</li>
+</ul>
+<p><strong>多态利用虚函数机制，在执行期根据object的真正类型解析出到底是哪一个函数实例被调用。这不只使得“当类型有所增加、修改或删减时，我们的程序代码无须改变”，而且也使一个心得Library_materials subtype的供应者不需要重新写出“对继承体系中的所有类型共通”的行为和操作。</strong></p>
+<p>一个class object需要多少内存，一般而言：</p>
+<ul>
+<li>其nonstatic data members的总和大小。</li>
+<li>加上任何由于alignment（将数值调整到某数的倍数）的需求而填补上去的空间。</li>
+<li>加上为了支持virtual而由内部产生的任何额外负担。</li>
+</ul>
+<p><strong>一个指针，不管它指向哪一种数据类型，指针本身所需的内存大小是固定的。</strong></p>
+<h2 id="指针的类型"><a href="#指针的类型" class="headerlink" title="指针的类型"></a>指针的类型</h2><p><strong>指向不同类型的指针间的差异：</strong></p>
+<p>既不在其指针表示不同，也不在其内容（代表一个地址）不同，而是在其所寻址出来的object类型不同。也就是说<strong>指针类型会教导编译器如何解释某个特定地址中的内存内容及其大小。</strong></p>
+<p>一个类型为<code>void*</code>的指针只能够持有一个地址，而不能够通过它操作所指的object。</p>
+<p>转换（cast）其实是一种编译器指令。大部分情况下它并不改变一个指针所含的真正地址，它只影响<strong>被指出的内存的大小和其内容</strong>的解释方式。</p>
+<h2 id="加上多态之后"><a href="#加上多态之后" class="headerlink" title="加上多态之后"></a>加上多态之后</h2><figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bear</span> :</span> <span class="hljs-keyword">public</span> ZooAnimal &#123;</span><br><span class="line"><span class="hljs-keyword">public</span>:</span><br><span class="line">    Bear();</span><br><span class="line">    ~Bear();</span><br><span class="line">    <span class="hljs-comment">//...</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">rotate</span><span class="hljs-params">()</span></span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">dance</span><span class="hljs-params">()</span></span>;</span><br><span class="line">    <span class="hljs-comment">// ...</span></span><br><span class="line"><span class="hljs-keyword">protected</span>:</span><br><span class="line">    <span class="hljs-keyword">enum</span> Dances &#123;...&#125;;</span><br><span class="line">    Dances dances_known;</span><br><span class="line">    <span class="hljs-keyword">int</span> cell_block;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function">Bear <span class="hljs-title">b</span><span class="hljs-params">(<span class="hljs-string">"Yogi"</span>)</span></span>;</span><br><span class="line">Bear *pb = &amp;b;</span><br><span class="line">Bear &amp;rb = *pb;</span><br><span class="line"></span><br><span class="line">ZooAnimal *pz = &amp;b;</span><br></pre></td></tr></table></figure>
+<p>下图展示了可能的内存布局。</p>
+<p><img src="/images/深度探索C++对象模型/1-3.png" width="400" height="300" div align="center"></p>
+<p>pb和pz都指向Bear object的第一个byte。差别是，pb所涵盖的地址包含整个Bear object，而pz所涵盖的地址只包含Bear object中的ZooAnimal subobject。<strong>除了ZooAnimal subobject中出现的members，不能使用pz来直接处理任何members。唯一例外是通过virtual机制。</strong></p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pz-&gt;rotate();</span><br></pre></td></tr></table></figure>
+<p>在每一个执行点，pz所指的object类型可以决定rotate()所调用的实例。这里会根据vptr指针找到虚函数表，在找到函数的地址。</p>
+<p>下面的情况会引起对象切割：</p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Bear b;</span><br><span class="line">ZooAnimal za = b;  <span class="hljs-comment">// 引起切割</span></span><br><span class="line"><span class="hljs-comment">// 调用ZooAnimal::rotate()</span></span><br><span class="line">za.rotate();</span><br></pre></td></tr></table></figure>
+<p>为什么会调用ZooAnimal实例而不是Bear实例？初始化函数将一个object内容完整就考呗到另一个object去，为什么za的vptr不指向Bear的virtual table？</p>
+<ul>
+<li>(1) za并不是一个Bear，它是一个ZooAnimal。<strong>当一个base class object被直接初始化为（或是被指定为）一个derived class object时，derived object就会被切割以塞入较小的base type内存中。</strong></li>
+<li>(2) 编译器在初始化及指定操作之间做出了仲裁。编译器必须确保如果某个object含有一个或一个以上的vptrs，那些vptrs的内容不会被base class object初始化或改变。</li>
+</ul>
+<p>多态所造成的“一个以上的类型”的潜在力量，并不能够实际发挥在“直接存取object”这件事情上。<strong>OO程序设计并不支持对object的直接处理。</strong></p>
+<figure class="highlight cpp hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    ZooAnimal za;</span><br><span class="line">    ZooAnimal *pza;</span><br><span class="line">    </span><br><span class="line">    Bear b;</span><br><span class="line">    Panda *pp = <span class="hljs-keyword">new</span> Panda;</span><br><span class="line">    </span><br><span class="line">    pza = &amp;b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其内存布局如下：</p>
+<p><img src="/images/深度探索C++对象模型/1-4.png" width="400" height="300" div align="center"></p>
+<p>一个指针或一个引用之所以支持多态，是因为它们并不引发内存中任何“与类型有关的内存委托操作”；会收到改变的，只有它们所指向的内存的“大小和内容解释方式”而已。</p>
+
         </div>
         
         <div class="level is-size-7 is-uppercase">
@@ -243,13 +310,13 @@ var _hmt = _hmt || [];
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
-        <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/2019/03/18/多态原理探究/">
-                <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">多态原理探究</span>
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/09/16/Redis设计与实现（六）对象/">
+                <span class="level-item">Redis设计与实现（六）对象</span>
+                <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
-        
         
     </div>
 </div>
@@ -291,6 +358,41 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left is-sticky">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-1-C-对象模式">
+        <span class="has-mr-6">1</span>
+        <span>1.1 C++对象模式</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#C-对象模型">
+        <span class="has-mr-6">1.1</span>
+        <span>C++对象模型</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#加上继承">
+        <span class="has-mr-6">1.1.1</span>
+        <span>加上继承</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#1-2-多态、指针的研究">
+        <span class="has-mr-6">2</span>
+        <span>1.2 多态、指针的研究</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#指针的类型">
+        <span class="has-mr-6">2.1</span>
+        <span>指针的类型</span>
+        </a></li><li>
+        <a class="is-flex" href="#加上多态之后">
+        <span class="has-mr-6">2.2</span>
+        <span>加上多态之后</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -764,7 +866,7 @@ var _hmt = _hmt || [];
             <div class="level-start has-text-centered-mobile">
                 <a class="footer-logo is-block has-mb-6" href="/">
                 
-                    <img src="/images/冯泡泡.png" alt="重载与重写" height="28">
+                    <img src="/images/冯泡泡.png" alt="深度探索C++对象模型（一）关于对象" height="28">
                 
                 </a>
                 <p class="is-size-7">
